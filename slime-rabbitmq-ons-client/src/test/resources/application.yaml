@@ -1,0 +1,12 @@
+server:
+  port: 9090
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    password: guest
+    username: guest
+slime:
+    ons:
+      halfMessageQueue: slime.ons.halfMessageQueue
+      transactionCallbackQueue: slime.ons.transactionCallbackQueue

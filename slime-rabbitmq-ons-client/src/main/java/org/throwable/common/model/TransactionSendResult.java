@@ -56,4 +56,15 @@ public class TransactionSendResult {
     public void setSendStats(SendStats sendStats) {
         this.sendStats = sendStats;
     }
+
+	@Override
+	public String toString() {
+		return "TransactionSendResult{" +
+				"sendStats=" + sendStats +
+				", messageId='" + messageId + '\'' +
+				", uniqueCode='" + uniqueCode + '\'' +
+				", transactionId='" + transactionId + '\'' +
+				", localTransactionStats=" + localTransactionStats +
+				'}';
+	}
 }
