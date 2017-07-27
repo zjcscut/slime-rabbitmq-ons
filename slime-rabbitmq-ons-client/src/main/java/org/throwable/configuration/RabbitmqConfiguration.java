@@ -18,6 +18,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.throwable.support.TransactionMessageProducer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @author throwable
  * @version v1.0
@@ -112,11 +115,17 @@ public class RabbitmqConfiguration {
 	@Bean
 	public RabbitAdmin rabbitAdmin(CachingConnectionFactory cachingConnectionFactory) {
 		RabbitAdmin rabbitAdmin = new RabbitAdmin(cachingConnectionFactory);
-		Queue halfMessageQueue = new Queue(onsProperties.getHalfMessageQueue(), true, false, false, null);
-		rabbitAdmin.declareQueue(halfMessageQueue);
-		DirectExchange halfMessageExchange = new DirectExchange(onsProperties.getHalfMessageQueue(), true, false);
-		rabbitAdmin.declareExchange(halfMessageExchange);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(halfMessageQueue).to(halfMessageExchange).with(onsProperties.getHalfMessageQueue()));
+		List<String> queuesToDeclare = new ArrayList<>();
+		queuesToDeclare.add(onsProperties.getHalfMessageQueue());
+		queuesToDeclare.add(onsProperties.getTransactionCheckerQueue());
+		queuesToDeclare.add(onsProperties.getFireTransactionQueue());
+		for (String queueToDeclare : queuesToDeclare) {
+			Queue queue = new Queue(queueToDeclare, true, false, false, null);
+			rabbitAdmin.declareQueue(queue);
+			DirectExchange exchange = new DirectExchange(queueToDeclare, true, false);
+			rabbitAdmin.declareExchange(exchange);
+			rabbitAdmin.declareBinding(BindingBuilder.bind(queue).to(exchange).with(queueToDeclare));
+		}
 		return rabbitAdmin;
 	}
 

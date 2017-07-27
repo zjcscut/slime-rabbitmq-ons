@@ -10,7 +10,7 @@ spring:
     driver-class-name: com.mysql.jdbc.Driver
     username: root
     password: root
-    url: jdbc:mysql://localhost:3306/jdbc
+    url: jdbc:mysql://localhost:3306/slime_ons?useUnicode=true&characterEncoding=UTF-8&useSSL=false
 slime:
     ons:
       halfMessageQueue: slime.ons.halfMessageQueue

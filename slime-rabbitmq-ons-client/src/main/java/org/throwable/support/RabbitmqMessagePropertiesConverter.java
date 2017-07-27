@@ -40,6 +40,7 @@ public final class RabbitmqMessagePropertiesConverter {
                                       final String queue,
                                       final String exchange,
                                       final String routingKey,
+                                      final String checkerClassName,
                                       final String args) {
         MessageProperties messageProperties = message.getMessageProperties();
         messageProperties.setHeader("messageId", messageId);
@@ -53,6 +54,7 @@ public final class RabbitmqMessagePropertiesConverter {
         if (null != args)
             messageProperties.setHeader("args", args);
         messageProperties.setTimestamp(new Date());
+        messageProperties.setHeader("checkerClassName",checkerClassName);
         messageProperties.setContentEncoding(DEFAULT_ENCODING);
     }
 

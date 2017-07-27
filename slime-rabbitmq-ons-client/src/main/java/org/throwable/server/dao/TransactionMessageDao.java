@@ -20,26 +20,32 @@ import java.sql.Statement;
 @Repository
 public class TransactionMessageDao {
 
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
-    public TransactionMessage save(final TransactionMessage transactionMessage) {
-        final String sql = "INSERT INTO t_transaction_message(queue, exchange, routingKey, content) VALUES (?,?,?,?)";
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        jdbcTemplate.update(con -> {
-            PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, transactionMessage.getQueue());
-            ps.setString(2, transactionMessage.getExchange());
-            ps.setString(3, transactionMessage.getRoutingKey());
-            ps.setString(4, transactionMessage.getContent());
-            return ps;
-        }, keyHolder);
-        transactionMessage.setId(keyHolder.getKey().longValue());
-        return transactionMessage;
-    }
+	public TransactionMessage save(final TransactionMessage transactionMessage) {
+		final String sql = "INSERT INTO t_transaction_message(queue, exchange, routingKey, content,uniqueCode) VALUES (?,?,?,?,?)";
+		KeyHolder keyHolder = new GeneratedKeyHolder();
+		jdbcTemplate.update(con -> {
+			PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+			ps.setString(1, transactionMessage.getQueue());
+			ps.setString(2, transactionMessage.getExchange());
+			ps.setString(3, transactionMessage.getRoutingKey());
+			ps.setString(4, transactionMessage.getContent());
+			ps.setString(5, transactionMessage.getUniqueCode());
+			return ps;
+		}, keyHolder);
+		transactionMessage.setId(keyHolder.getKey().longValue());
+		return transactionMessage;
+	}
 
-    public TransactionMessage fetchById(Long id) {
-        final String sql = "SELECT * FROM t_transaction_message WHERE id = ?";
-        return jdbcTemplate.queryForObject(sql, new Object[]{id}, new BeanPropertyRowMapper<>(TransactionMessage.class));
-    }
+	public TransactionMessage fetchById(Long id) {
+		final String sql = "SELECT * FROM t_transaction_message WHERE id = ?";
+		return jdbcTemplate.queryForObject(sql, new Object[]{id}, new BeanPropertyRowMapper<>(TransactionMessage.class));
+	}
+
+	public TransactionMessage fetchByUniqueCode(String uniqueCode) {
+		final String sql = "SELECT * FROM t_transaction_message WHERE uniqueCode = ?";
+		return jdbcTemplate.queryForObject(sql, new Object[]{uniqueCode}, new BeanPropertyRowMapper<>(TransactionMessage.class));
+	}
 }

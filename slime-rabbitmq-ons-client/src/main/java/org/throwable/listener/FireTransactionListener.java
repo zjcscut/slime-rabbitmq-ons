@@ -15,7 +15,7 @@ import java.util.Map;
  * @description
  * @since 2017/7/27 0:44
  */
-//@Component
+@Component
 public class FireTransactionListener {
 
     @RabbitListener(queues = "${slime.ons.fireTransactionQueue}",

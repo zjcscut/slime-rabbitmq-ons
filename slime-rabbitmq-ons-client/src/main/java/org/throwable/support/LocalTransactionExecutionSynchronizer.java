@@ -13,7 +13,6 @@ public abstract class LocalTransactionExecutionSynchronizer {
 
     private static final Map<String, BlockingLocalTransactionExecutorConsumer> executorConsumers = new ConcurrentHashMap<>(256);
     private static final Map<String, LocalTransactionExecutor> localTransactionExecutors = new ConcurrentHashMap<>(256);
-    private static final Map<String, LocalTransactionChecker> localTransactionCheckers = new ConcurrentHashMap<>(256);
 
     public static void addTransactionExecutor(String uniqueCode, LocalTransactionExecutor transactionExecutor) {
         localTransactionExecutors.putIfAbsent(uniqueCode, transactionExecutor);
@@ -48,19 +47,5 @@ public abstract class LocalTransactionExecutionSynchronizer {
         executorConsumers.remove(uniqueCode);
     }
 
-    public static void addTransactionChecker(String uniqueCode, LocalTransactionChecker checker) {
-        localTransactionCheckers.putIfAbsent(uniqueCode, checker);
-    }
 
-    public static LocalTransactionChecker getTransactionChecker(String uniqueCode) {
-        return localTransactionCheckers.get(uniqueCode);
-    }
-
-    public static boolean existTransactionChecker(String uniqueCode) {
-        return localTransactionCheckers.containsKey(uniqueCode);
-    }
-
-    public static void removeTransactionChecker(String uniqueCode) {
-        localTransactionCheckers.remove(uniqueCode);
-    }
 }

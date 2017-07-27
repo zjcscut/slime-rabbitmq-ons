@@ -14,6 +14,8 @@ public class TransactionMessage {
     private String routingKey;
     private String content;
 
+	private String uniqueCode;
+
     public Long getId() {
         return id;
     }
@@ -53,4 +55,12 @@ public class TransactionMessage {
     public void setContent(String content) {
         this.content = content;
     }
+
+	public String getUniqueCode() {
+		return uniqueCode;
+	}
+
+	public void setUniqueCode(String uniqueCode) {
+		this.uniqueCode = uniqueCode;
+	}
 }

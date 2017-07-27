@@ -17,9 +17,9 @@ public class TransactionLog {
     private String messageId;
     private String uniqueCode;
 
-    private String sendStats;
     private String transactionStats;
     private String pushStats;
+    private String fireTransactionStats;
     private Integer checkAttemptTime;
     private Integer pushAttemptTime;
 
@@ -57,14 +57,6 @@ public class TransactionLog {
 
     public void setUniqueCode(String uniqueCode) {
         this.uniqueCode = uniqueCode;
-    }
-
-    public String getSendStats() {
-        return sendStats;
-    }
-
-    public void setSendStats(String sendStats) {
-        this.sendStats = sendStats;
     }
 
     public String getTransactionStats() {
@@ -122,4 +114,12 @@ public class TransactionLog {
     public void setTransactionId(Long transactionId) {
         this.transactionId = transactionId;
     }
+
+	public String getFireTransactionStats() {
+		return fireTransactionStats;
+	}
+
+	public void setFireTransactionStats(String fireTransactionStats) {
+		this.fireTransactionStats = fireTransactionStats;
+	}
 }
