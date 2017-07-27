@@ -117,12 +117,6 @@ public class RabbitmqConfiguration {
 		DirectExchange halfMessageExchange = new DirectExchange(onsProperties.getHalfMessageQueue(), true, false);
 		rabbitAdmin.declareExchange(halfMessageExchange);
 		rabbitAdmin.declareBinding(BindingBuilder.bind(halfMessageQueue).to(halfMessageExchange).with(onsProperties.getHalfMessageQueue()));
-
-		Queue transactionCallbackQueue = new Queue(onsProperties.getTransactionCallbackQueue(), true, false, false, null);
-		rabbitAdmin.declareQueue(transactionCallbackQueue);
-		DirectExchange transactionCallbackExchange = new DirectExchange(onsProperties.getTransactionCallbackQueue(), true, false);
-		rabbitAdmin.declareExchange(transactionCallbackExchange);
-		rabbitAdmin.declareBinding(BindingBuilder.bind(transactionCallbackQueue).to(transactionCallbackExchange).with(onsProperties.getTransactionCallbackQueue()));
 		return rabbitAdmin;
 	}
 

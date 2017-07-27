@@ -15,11 +15,15 @@ public class OnsProperties {
 	public static final String HALFMESSAGE_QUEUE_KEY = PREFIX + ".halfMessageQueue";
 	public static final String DEFAULT_HALFMESSAGE_QUEUE = HALFMESSAGE_QUEUE_KEY;
 
-	public static final String TRANSACTIONCALLBACK_QUEUE_KEY = PREFIX + ".transactionCallbackQueue";
-	public static final String DEFAULT_TRANSACTIONCALLBACK_QUEUE = TRANSACTIONCALLBACK_QUEUE_KEY;
+	public static final String TRANSACTIONCHECKER_QUEUE_KEY = PREFIX + ".transactionCheckerQueue";
+	public static final String DEFAULT_TRANSACTIONCHECKER_QUEUE = TRANSACTIONCHECKER_QUEUE_KEY;
+
+	public static final String FIRETRANSACTION_QUEUE_KEY = PREFIX + ".fireTransactionQueue";
+	public static final String DEFAULT_FIRETRANSACTION_QUEUE = FIRETRANSACTION_QUEUE_KEY;
 
 	private String halfMessageQueue = DEFAULT_HALFMESSAGE_QUEUE;
-	private String transactionCallbackQueue = DEFAULT_TRANSACTIONCALLBACK_QUEUE;
+	private String transactionCheckerQueue = DEFAULT_TRANSACTIONCHECKER_QUEUE;
+	private String fireTransactionQueue = DEFAULT_FIRETRANSACTION_QUEUE;
 
 	public String getHalfMessageQueue() {
 		return halfMessageQueue;
@@ -29,11 +33,19 @@ public class OnsProperties {
 		this.halfMessageQueue = halfMessageQueue;
 	}
 
-	public String getTransactionCallbackQueue() {
-		return transactionCallbackQueue;
+	public String getTransactionCheckerQueue() {
+		return transactionCheckerQueue;
 	}
 
-	public void setTransactionCallbackQueue(String transactionCallbackQueue) {
-		this.transactionCallbackQueue = transactionCallbackQueue;
+	public void setTransactionCheckerQueue(String transactionCheckerQueue) {
+		this.transactionCheckerQueue = transactionCheckerQueue;
+	}
+
+	public String getFireTransactionQueue() {
+		return fireTransactionQueue;
+	}
+
+	public void setFireTransactionQueue(String fireTransactionQueue) {
+		this.fireTransactionQueue = fireTransactionQueue;
 	}
 }

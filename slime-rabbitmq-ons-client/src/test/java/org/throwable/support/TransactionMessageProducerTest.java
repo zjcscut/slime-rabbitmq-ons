@@ -25,31 +25,37 @@ import static org.junit.Assert.*;
 @SpringBootTest(classes = Application.class)
 public class TransactionMessageProducerTest {
 
-	@Autowired
-	private TransactionMessageProducer transactionMessageProducer;
+    @Autowired
+    private TransactionMessageProducer transactionMessageProducer;
 
-	@Test
-	public void testSendMessage() throws Exception {
-		String messageId = UUID.randomUUID().toString();
+    @Test
+    public void testSendMessage() throws Exception {
+        String messageId = UUID.randomUUID().toString();
 
-		TransactionSendResult result =transactionMessageProducer.sendMessageInTransaction(
-				messageId,
-				messageId,
-				new Message("hello".getBytes(),new MessageProperties()),
-				new LocalTransactionExecutor(){
-					@Override
-					public LocalTransactionStats doInLocalTransaction() {
-						return LocalTransactionStats.COMMITED;
-					}
-				},
-				5,
-				"queue-1",
-				"queue-1",
-				"queue-1"
+        TransactionSendResult result = transactionMessageProducer.sendMessageInTransaction(
+                messageId,
+                messageId,
+                new Message("hello".getBytes(), new MessageProperties()),
+                new LocalTransactionExecutor() {
+                    @Override
+                    public LocalTransactionStats doInLocalTransaction() {
+                        return LocalTransactionStats.COMMITED;
+                    }
+                },
+                new LocalTransactionChecker() {
+                    @Override
+                    public LocalTransactionStats doInTransactionCheck(Message message) {
+                        return LocalTransactionStats.COMMITED;
+                    }
+                },
+                5,
+                "queue-1",
+                "queue-1",
+                "queue-1"
 
-		);
+        );
 
-		assertNotNull(result);
-		System.out.println(result);
-	}
+        assertNotNull(result);
+        System.out.println(result);
+    }
 }

@@ -10,6 +10,8 @@ public enum SendStats {
 
     PREPARE,
 
+    HALF_SUCCESS,
+
     SUCCESS,
 
     FAIL

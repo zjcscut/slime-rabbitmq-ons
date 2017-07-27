@@ -15,4 +15,8 @@ public class SendMqMessageException extends RuntimeException {
     public SendMqMessageException(Throwable cause) {
         super(cause);
     }
+
+    public SendMqMessageException(String message) {
+        super(message);
+    }
 }
