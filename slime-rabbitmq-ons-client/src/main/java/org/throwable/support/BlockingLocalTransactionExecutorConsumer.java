@@ -3,12 +3,11 @@ package org.throwable.support;
 import org.throwable.common.constants.LocalTransactionStats;
 import org.throwable.common.model.TransactionCallbackResult;
 import org.throwable.exception.LocalTransactionExecutionException;
+import org.throwable.exception.LocalTransactionExecutionTimeoutException;
 import org.throwable.exception.LocalTransactionInterruptedException;
 import org.throwable.exception.LocalTransactionTimeoutException;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author throwable
@@ -18,57 +17,98 @@ import java.util.concurrent.TimeUnit;
  */
 public class BlockingLocalTransactionExecutorConsumer {
 
-	private final static int DEFAULT_PREFETCH_COUNT = 1;
-	private final BlockingQueue<LocalTransactionExecutor> localTransactionExecutors;
+    private final static int DEFAULT_PREFETCH_COUNT = 1;
+    private final BlockingQueue<LocalTransactionExecutor> localTransactionExecutors;
 
-	private String transactionId;
+    private String transactionId;
+    private long fireTransactionTimeoutSeconds;
+    private long executeTransactionTimeoutSeconds;
+    private String uniqueCode;
+    private ExecutorService executorService;
 
-	public BlockingLocalTransactionExecutorConsumer() {
-		this(DEFAULT_PREFETCH_COUNT);
-	}
+    public BlockingLocalTransactionExecutorConsumer(long fireTransactionTimeoutSeconds,
+                                                    long executeTransactionTimeoutSeconds,
+                                                    String uniqueCode,
+                                                    ExecutorService executor) {
+        this(DEFAULT_PREFETCH_COUNT, fireTransactionTimeoutSeconds, executeTransactionTimeoutSeconds, uniqueCode, executor);
+    }
 
-	public BlockingLocalTransactionExecutorConsumer(int prefetchCount) {
-		this.localTransactionExecutors = new LinkedBlockingQueue<>(prefetchCount);
-	}
+    public BlockingLocalTransactionExecutorConsumer(int prefetchCount,
+                                                    long fireTransactionTimeoutSeconds,
+                                                    long executeTransactionTimeoutSeconds,
+                                                    String uniqueCode,
+                                                    ExecutorService executor) {
+        this.fireTransactionTimeoutSeconds = fireTransactionTimeoutSeconds;
+        this.executeTransactionTimeoutSeconds = executeTransactionTimeoutSeconds;
+        this.executorService = executor;
+        this.uniqueCode = uniqueCode;
+        this.localTransactionExecutors = new LinkedBlockingQueue<>(prefetchCount);
+    }
 
-	public void addLocalTransactionExecutor(LocalTransactionExecutor transactionExecutor) {
-		try {
-			this.localTransactionExecutors.put(transactionExecutor);
-		} catch (InterruptedException e) {
-			throw new LocalTransactionInterruptedException("Process addLocalTransactionExecutor interrupted!", e);
-		}
-	}
+    public void addLocalTransactionExecutor(LocalTransactionExecutor transactionExecutor) {
+        try {
+            this.localTransactionExecutors.put(transactionExecutor);
+        } catch (InterruptedException e) {
+            throw new LocalTransactionInterruptedException("Process addLocalTransactionExecutor interrupted!", e);
+        }
+    }
 
-	public TransactionCallbackResult processLocalTransactionExecutor(long timeoutSeconds) {
-		return processLocalTransactionExecutor(timeoutSeconds, TimeUnit.SECONDS);
-	}
+    public TransactionCallbackResult processLocalTransactionExecutor() {
+        return processLocalTransactionExecutor(fireTransactionTimeoutSeconds, executeTransactionTimeoutSeconds, TimeUnit.SECONDS);
+    }
 
-	public TransactionCallbackResult processLocalTransactionExecutor(long timeout, TimeUnit unit) {
-		LocalTransactionExecutor executor;
-		try {
-			executor = localTransactionExecutors.poll(timeout, unit);
-		} catch (InterruptedException e) {
-			throw new LocalTransactionInterruptedException("Process processLocalTransactionExecutor interrupted!", e);
-		}
-		if (null == executor) {
-			throw new LocalTransactionTimeoutException("Process processLocalTransactionExecutor timeout!");
-		}
-		try {
-			TransactionCallbackResult callbackResult = new TransactionCallbackResult();
-			LocalTransactionStats localTransactionStats = executor.doInLocalTransaction();
-			callbackResult.setLocalTransactionStats(localTransactionStats);
-			callbackResult.setTransactionId(getTransactionId());
-			return callbackResult;
-		} catch (Exception e) {
-			throw new LocalTransactionExecutionException("Process processLocalTransactionExecutor failed!", e);
-		}
-	}
+    public TransactionCallbackResult processLocalTransactionExecutor(long fireTransactionTimeoutSeconds,
+                                                                     long executeTransactionTimeoutSeconds,
+                                                                     TimeUnit unit) {
+        LocalTransactionExecutor executor;
+        try {
+            executor = localTransactionExecutors.poll(fireTransactionTimeoutSeconds, unit);
+        } catch (InterruptedException e) {
+            throw new LocalTransactionInterruptedException(String.format("Fire transactionExecutor interrupted,uniqueCode:%s", uniqueCode), e);
+        }
+        if (null == executor) {
+            throw new LocalTransactionTimeoutException(String.format("Fire transactionExecutor timeout,uniqueCode:%s", uniqueCode));
+        }
+        try {
+            TransactionCallbackResult callbackResult = new TransactionCallbackResult();
+            final CompletableFuture<LocalTransactionStats> future = new CompletableFuture<>();
+            executorService.submit((Callable<Void>) () -> {
+                try {
+                    future.complete(executor.doInLocalTransaction());
+                } catch (Exception e) {
+                    future.completeExceptionally(new LocalTransactionExecutionException(e));
+                }
+                return null;
+            });
+            LocalTransactionStats localTransactionStats = future.get(executeTransactionTimeoutSeconds, TimeUnit.SECONDS);
+            callbackResult.setLocalTransactionStats(localTransactionStats);
+            callbackResult.setTransactionId(getTransactionId());
+            return callbackResult;
+        } catch (Exception e) {
+            handleTransactionException(e, uniqueCode);
+        }
+        throw new LocalTransactionExecutionException(String.format("Process processLocalTransactionExecutor failed,uniqueCode:%s", uniqueCode));
+    }
 
-	public String getTransactionId() {
-		return transactionId;
-	}
+    private void handleTransactionException(Exception e, String uniqueCode) {
+        if (e instanceof InterruptedException) {
+            throw new LocalTransactionExecutionException(String.format("Process processLocalTransactionExecutor interrupted,uniqueCode:%s", uniqueCode), e);
+        } else if (e instanceof ExecutionException) {
+            throw new LocalTransactionExecutionException(String.format("Process processLocalTransactionExecutor failed,uniqueCode:%s", uniqueCode), e);
+        } else if (e instanceof TimeoutException) {
+            throw new LocalTransactionExecutionTimeoutException(String.format("Process processLocalTransactionExecutor timeout,uniqueCode:%s", uniqueCode), e);
+        } else if (e instanceof LocalTransactionExecutionException) {
+            throw new LocalTransactionExecutionException(String.format("Process processLocalTransactionExecutor failed,uniqueCode:%s", uniqueCode), e);
+        } else {
+            throw new LocalTransactionExecutionException(String.format("Process processLocalTransactionExecutor failed,uniqueCode:%s", uniqueCode), e);
+        }
+    }
 
-	public void setTransactionId(String transactionId) {
-		this.transactionId = transactionId;
-	}
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
+    }
 }

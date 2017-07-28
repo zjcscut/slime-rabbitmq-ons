@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
@@ -29,9 +30,14 @@ public class TransactionMessageProducer implements EnvironmentAware, BeanFactory
 
 
     private static final long DEFAULT_CONFIRM_TIMEOUT_SECONDS = 5;
+    private static final long DEFAULT_FIRE_TRANSACTION_TIMEOUT_SECONDS = 15;
+    private static final long DEFAULT_EXECUTE_TRANSACTION_TIMEOUT_SECONDS = 15;
     private String halfMessageQueue;
     private volatile RabbitmqMessagePropertiesConverter converter = new RabbitmqMessagePropertiesConverter();
     private DefaultListableBeanFactory beanFactory;
+
+    @Autowired
+    private TransactionThreadPoolProvider transactionThreadPoolProvider;
 
     @Override
     public void setEnvironment(Environment environment) {
@@ -59,12 +65,12 @@ public class TransactionMessageProducer implements EnvironmentAware, BeanFactory
                                                           final Message message,
                                                           final LocalTransactionExecutor executor,
                                                           final Class<? extends LocalTransactionChecker> checkerClass,
-                                                          long executeTimeoutSeconds,
                                                           final String destinationQueue,
                                                           final String destinationExchange,
                                                           final String destinationRoutingKey) {
         return sendMessageInTransaction(messageId, uniqueCode, message, executor, checkerClass,
-                DEFAULT_CONFIRM_TIMEOUT_SECONDS, executeTimeoutSeconds,
+                DEFAULT_CONFIRM_TIMEOUT_SECONDS, DEFAULT_FIRE_TRANSACTION_TIMEOUT_SECONDS,
+                DEFAULT_EXECUTE_TRANSACTION_TIMEOUT_SECONDS,
                 destinationQueue, destinationExchange, destinationRoutingKey, null);
     }
 
@@ -74,7 +80,8 @@ public class TransactionMessageProducer implements EnvironmentAware, BeanFactory
                                                           final LocalTransactionExecutor executor,
                                                           final Class<? extends LocalTransactionChecker> checkerClass,
                                                           long confirmTimeoutSeconds,
-                                                          long executeTimeoutSeconds,
+                                                          long fireTransactionTimeoutSeconds,
+                                                          long executeTransactionTimeoutSeconds,
                                                           final String destinationQueue,
                                                           final String destinationExchange,
                                                           final String destinationRoutingKey,
@@ -94,7 +101,8 @@ public class TransactionMessageProducer implements EnvironmentAware, BeanFactory
         sendResult.setUniqueCode(uniqueCode);
         sendResult.setLocalTransactionStats(LocalTransactionStats.UNKNOWN);
         LocalTransactionExecutionSynchronizer.addTransactionExecutor(uniqueCode, executor);
-        BlockingLocalTransactionExecutorConsumer consumer = new BlockingLocalTransactionExecutorConsumer();
+        BlockingLocalTransactionExecutorConsumer consumer = new BlockingLocalTransactionExecutorConsumer(fireTransactionTimeoutSeconds,
+                executeTransactionTimeoutSeconds, uniqueCode, transactionThreadPoolProvider.getTransactionExecutor());
         LocalTransactionExecutionSynchronizer.addTransactionConsumer(uniqueCode, consumer);
         try {
             converter.wrapMessageProperties(message, messageId, uniqueCode, destinationQueue, destinationExchange,
@@ -116,7 +124,7 @@ public class TransactionMessageProducer implements EnvironmentAware, BeanFactory
             }));
             if (SendStats.HALF_SUCCESS.equals(sendResult.getSendStats())) {
                 try {
-                    TransactionCallbackResult callbackResult = consumer.processLocalTransactionExecutor(executeTimeoutSeconds);
+                    TransactionCallbackResult callbackResult = consumer.processLocalTransactionExecutor();
                     sendResult.setLocalTransactionStats(callbackResult.getLocalTransactionStats());
                     sendResult.setTransactionId(callbackResult.getTransactionId());
                 } catch (Exception e) {

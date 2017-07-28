@@ -41,11 +41,15 @@ public class TransactionMessageProducerTest {
 					new LocalTransactionExecutor() {
 						@Override
 						public LocalTransactionStats doInLocalTransaction() {
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e) {
+								//ignore
+							}
 							return LocalTransactionStats.COMMITED;
 						}
 					},
 					CustomLocalTransactionChecker.class,
-					1000,
 					"queue-1",
 					"queue-1",
 					"queue-1"

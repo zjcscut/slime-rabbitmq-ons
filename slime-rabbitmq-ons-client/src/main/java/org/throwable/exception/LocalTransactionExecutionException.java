@@ -12,6 +12,10 @@ public class LocalTransactionExecutionException extends RuntimeException{
         super(message);
     }
 
+    public LocalTransactionExecutionException(Throwable cause) {
+        super(cause);
+    }
+
     public LocalTransactionExecutionException(String message, Throwable cause) {
         super(message, cause);
     }
