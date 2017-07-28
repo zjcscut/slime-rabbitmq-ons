@@ -7,6 +7,7 @@ import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter
 import org.springframework.amqp.rabbit.support.MessagePropertiesConverter;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
+import org.throwable.common.constants.Constants;
 import org.throwable.common.converter.LocalTransactionStatsConverter;
 import org.throwable.common.converter.SendStatsConverter;
 
@@ -20,7 +21,6 @@ import java.util.Date;
  */
 public final class RabbitmqMessagePropertiesConverter {
 
-    public static final String DEFAULT_ENCODING = "UTF-8";
 
     private volatile MessagePropertiesConverter messagePropertiesConverter = new DefaultMessagePropertiesConverter();
     private static final DefaultConversionService conversionService = new DefaultConversionService();
@@ -31,7 +31,7 @@ public final class RabbitmqMessagePropertiesConverter {
     }
 
     public AMQP.BasicProperties convertToBasicProperties(MessageProperties messageProperties) {
-        return messagePropertiesConverter.fromMessageProperties(messageProperties, DEFAULT_ENCODING);
+        return messagePropertiesConverter.fromMessageProperties(messageProperties, Constants.ENCODING);
     }
 
     public void wrapMessageProperties(final Message message,
@@ -43,19 +43,19 @@ public final class RabbitmqMessagePropertiesConverter {
                                       final String checkerClassName,
                                       final String args) {
         MessageProperties messageProperties = message.getMessageProperties();
-        messageProperties.setHeader("messageId", messageId);
-        messageProperties.setHeader("uniqueCode", uniqueCode);
+        messageProperties.setHeader(Constants.MESSAGEID_KEY, messageId);
+        messageProperties.setHeader(Constants.UNIQUECODE_KEY, uniqueCode);
         if (null != queue)
-            messageProperties.setHeader("queue", queue);
+            messageProperties.setHeader(Constants.QUEUE_KEY, queue);
         if (null != exchange)
-            messageProperties.setHeader("exchange", exchange);
+            messageProperties.setHeader(Constants.EXCHANGE_KEY, exchange);
         if (null != routingKey)
-            messageProperties.setHeader("routingKey", routingKey);
+            messageProperties.setHeader(Constants.ROUTINGKEY_KEY, routingKey);
         if (null != args)
-            messageProperties.setHeader("args", args);
+            messageProperties.setHeader(Constants.ARGS_KEY, args);
         messageProperties.setTimestamp(new Date());
-        messageProperties.setHeader("checkerClassName",checkerClassName);
-        messageProperties.setContentEncoding(DEFAULT_ENCODING);
+        messageProperties.setHeader(Constants.CHECKERCLASSNAME_KEY, checkerClassName);
+        messageProperties.setContentEncoding(Constants.ENCODING);
     }
 
     public <T> T getHeaderValue(MessageProperties messageProperties, String key, Class<T> clazz) {
@@ -76,7 +76,7 @@ public final class RabbitmqMessagePropertiesConverter {
         return conversionService.convert(value, String.class);
     }
 
-    public String getHeaderValue(MessageProperties messageProperties, String key,String def) {
+    public String getHeaderValue(MessageProperties messageProperties, String key, String def) {
         Object value = messageProperties.getHeaders().get(key);
         if (null == value) return def;
         return conversionService.convert(value, String.class);

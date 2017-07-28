@@ -1,6 +1,7 @@
 package org.throwable.configuration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
 /**
  * @author throwable
@@ -8,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @description
  * @since 2017/7/26 15:28
  */
+@Component
 @ConfigurationProperties(prefix = OnsProperties.PREFIX)
 public class OnsProperties {
 

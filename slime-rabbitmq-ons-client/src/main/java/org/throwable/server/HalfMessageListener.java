@@ -14,6 +14,7 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.throwable.common.constants.Constants;
 import org.throwable.common.constants.FireTransactionStats;
 import org.throwable.common.constants.LocalTransactionStats;
 import org.throwable.common.constants.SendStats;
@@ -76,20 +77,20 @@ public class HalfMessageListener implements EnvironmentAware {
 				OnsProperties.DEFAULT_FIRETRANSACTION_QUEUE);
 	}
 
-	@RabbitListener(queues = "${slime.ons.halfMessageQueue}",
-			containerFactory = "simpleRabbitListenerContainerFactory",
-			admin = "rabbitAdmin")
+	@RabbitListener(queues = Constants.HALFMESSAGEQUEUE_PROPERTIES_KEY,
+			containerFactory = Constants.CONTAINERFACTORY_KEY,
+			admin = Constants.RABBITADMIN_KEY)
 	public void onMessage(Message message) throws Exception {
-		String body = new String(message.getBody(), "UTF-8");
+		String body = new String(message.getBody(), Constants.ENCODING);
 		MessageProperties messageProperties = message.getMessageProperties();
-		String queue = converter.getHeaderValue(messageProperties, "queue");
-		String exchange = converter.getHeaderValue(messageProperties, "exchange");
-		String routingKey = converter.getHeaderValue(messageProperties, "routingKey");
-		String messageId = converter.getHeaderValue(messageProperties, "messageId");
-		String uniqueCode = converter.getHeaderValue(messageProperties, "uniqueCode");
-		SendStats sendStats = converter.getHeaderValue(messageProperties, "sendStats", SendStats.class, SendStats.FAIL);
+		String queue = converter.getHeaderValue(messageProperties, Constants.QUEUE_KEY);
+		String exchange = converter.getHeaderValue(messageProperties, Constants.EXCHANGE_KEY);
+		String routingKey = converter.getHeaderValue(messageProperties, Constants.ROUTINGKEY_KEY);
+		String messageId = converter.getHeaderValue(messageProperties, Constants.MESSAGEID_KEY);
+		String uniqueCode = converter.getHeaderValue(messageProperties, Constants.UNIQUECODE_KEY);
+		SendStats sendStats = converter.getHeaderValue(messageProperties, Constants.SENDSTATS_KEY, SendStats.class, SendStats.FAIL);
 		LocalTransactionStats localTransactionStats =
-				converter.getHeaderValue(messageProperties, "localTransactionStats", LocalTransactionStats.class, LocalTransactionStats.UNKNOWN);
+				converter.getHeaderValue(messageProperties, Constants.LOCALTRANSACTIONSTATS_KEY, LocalTransactionStats.class, LocalTransactionStats.UNKNOWN);
 		switch (sendStats) {
 			case PREPARE:
 				processPrepareTransaction(message, body, messageId, uniqueCode, queue, exchange, routingKey, localTransactionStats);
@@ -138,10 +139,10 @@ public class HalfMessageListener implements EnvironmentAware {
 				= retryTemplate.execute((RetryCallback<FireTransactionStats, SendMqMessageException>) context -> {
 			try {
 				return rabbitTemplate.execute(channel -> {
-					message.getMessageProperties().setHeader("transactionId", callback.getTransactionId());
+					message.getMessageProperties().setHeader(Constants.TRANSACTIONID_KEY, callback.getTransactionId());
 					channel.confirmSelect();
 					AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(message.getMessageProperties());
-					channel.basicPublish(fireTransactionQueue, fireTransactionQueue, basicProperties, body.getBytes("UTF-8"));
+					channel.basicPublish(fireTransactionQueue, fireTransactionQueue, basicProperties, body.getBytes(Constants.ENCODING));
 					if (channel.waitForConfirms(5000)) {
 						return FireTransactionStats.SUCCESS;
 					}
@@ -177,7 +178,7 @@ public class HalfMessageListener implements EnvironmentAware {
 						return rabbitTemplate.execute(channel -> {
 							channel.confirmSelect();
 							AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(message.getMessageProperties());
-							channel.basicPublish(exchange, routingKey, basicProperties, transactionMessage.getContent().getBytes("UTF-8"));
+							channel.basicPublish(exchange, routingKey, basicProperties, transactionMessage.getContent().getBytes(Constants.ENCODING));
 							if (channel.waitForConfirms(5000)) {
 								return PushStats.SUCCESS;
 							}
