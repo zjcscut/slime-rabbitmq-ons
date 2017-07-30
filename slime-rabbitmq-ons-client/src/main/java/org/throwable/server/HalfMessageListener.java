@@ -153,8 +153,7 @@ public class HalfMessageListener extends AbstractRabbitmqSupportableService impl
 		if (null == transactionLog) {
 			return;
 		}
-		if (LocalTransactionStats.COMMITTED.equals(localTransactionStats) ||
-				LocalTransactionStats.ROLLBACK.equals(localTransactionStats)) {
+		if (!LocalTransactionStats.UNKNOWN.equals(localTransactionStats)) {
 			transactionLogDao.updateTransactionStats(transactionLog.getId(), localTransactionStats.toString(), new Date());
 
 		}

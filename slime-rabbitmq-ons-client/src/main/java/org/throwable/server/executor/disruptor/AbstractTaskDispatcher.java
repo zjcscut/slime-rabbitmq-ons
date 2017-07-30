@@ -28,6 +28,7 @@ public class AbstractTaskDispatcher implements Dispatcher<Callable<Void>>, Execu
 								  String threadPrefix,
 								  int bufferSize,
 								  int reserveWorkersNumbers,
+								  int keepAliveSeconds,
 								  WaitStrategyType waitStrategyType,
 								  CallableTaskHandler... taskHandlers) {
 		Assert.isTrue(workerNumbers > 0, "workerNumbers must be larger than 0!");
@@ -41,7 +42,7 @@ public class AbstractTaskDispatcher implements Dispatcher<Callable<Void>>, Execu
 		reserveExecutor = new ThreadPoolExecutor(
 				0,
 				reserveMaxSize,
-				60L,
+				keepAliveSeconds,
 				TimeUnit.SECONDS,
 				new SynchronousQueue<>(),
 				new NamedThreadFactory(threadPrefix),

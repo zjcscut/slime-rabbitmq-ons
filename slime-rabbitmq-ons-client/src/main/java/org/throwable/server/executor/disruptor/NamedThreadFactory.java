@@ -31,9 +31,9 @@ public class NamedThreadFactory implements ThreadFactory {
 	}
 
 	@Override
-	public Thread newThread(@Nonnull Runnable r) {
+	public Thread newThread(@Nonnull Runnable runnable) {
 		String threadName = prefix + "-thread-" + counter.getAndIncrement();
-		Thread thread = new Thread(group, threadName);
+		Thread thread = new Thread(group, runnable, threadName);
 		thread.setDaemon(daemon);
 		thread.setPriority(priority);
 		return thread;

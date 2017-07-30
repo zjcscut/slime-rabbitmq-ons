@@ -36,7 +36,7 @@ public interface Constants {
 
     String RABBITADMIN_KEY = "rabbitAdmin";
 
-    String HALFMESSAGEQUEUE_PROPERTIES_KEY = "#{onsClientProperties['halfMessageQueue']}";
+    String HALFMESSAGEQUEUE_PROPERTIES_KEY = "#{onsServerProperties['halfMessageQueue']}";
 
     String FIRETRANSACTIONQUEUE_PROPERTIES_KEY = "#{onsClientProperties['fireTransactionQueue']}";
 
@@ -57,5 +57,7 @@ public interface Constants {
     String CALLABLETASKHANDLER_BEANNAME = "callableTaskHandler";
 
     String TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISRUPTOR_BEANNAME = "transactionMessagePushStatsInspectionTaskDisruptor";
+
+    String TRANSACTIONCHECKERFIRETASKDISRUPTOR_BEANNAME = "transactionCheckerFireTaskDisruptor";
 
 }

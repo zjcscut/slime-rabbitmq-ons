@@ -16,14 +16,16 @@ public class OnsServerProperties {
 
 	public static final String PREFIX = "slime.ons.server";
 
+	public static final String QUEUE_PREFIX = "slime.ons.";
 	public static final String HALFMESSAGE_QUEUE_KEY = PREFIX + ".halfMessageQueue";
-	public static final String DEFAULT_HALFMESSAGE_QUEUE = HALFMESSAGE_QUEUE_KEY;
+	public static final String DEFAULT_HALFMESSAGE_QUEUE = QUEUE_PREFIX + "halfMessageQueue";
 
 	public static final String TRANSACTIONCHECKER_QUEUE_KEY = PREFIX + ".transactionCheckerQueue";
-	public static final String DEFAULT_TRANSACTIONCHECKER_QUEUE = TRANSACTIONCHECKER_QUEUE_KEY;
+	public static final String DEFAULT_TRANSACTIONCHECKER_QUEUE = QUEUE_PREFIX + "transactionCheckerQueue";
 
 	public static final String FIRETRANSACTION_QUEUE_KEY = PREFIX + ".fireTransactionQueue";
-	public static final String DEFAULT_FIRETRANSACTION_QUEUE = FIRETRANSACTION_QUEUE_KEY;
+	public static final String DEFAULT_FIRETRANSACTION_QUEUE = QUEUE_PREFIX + "fireTransactionQueue";
+
 	public static final String CONFIRM_TIMEOUT_SECONDS_KEY = PREFIX + ".confirmTimeoutSeconds";
 
 	private static final Integer DEFAULT_WORKER_NUMBER = Runtime.getRuntime().availableProcessors();
@@ -37,6 +39,7 @@ public class OnsServerProperties {
 	private static final String DEFAULT_PUSHSTATSINSPECTIONWORKERPREFIX = "pushStatsInspectionWorker";
 	private static final String DEFAULT_WAITSTRATEGY = "BLOCKING_WAIT";
 	private static final Integer DEFAULT_ATTEMPTTIME = 3;
+	private static final Integer DEFAULT_KEEPALIVESECONDS = 60;
 
 
 	private String halfMessageQueue = DEFAULT_HALFMESSAGE_QUEUE;
@@ -51,6 +54,7 @@ public class OnsServerProperties {
 	private String checkerFireWorkerWaitStrategy = DEFAULT_WAITSTRATEGY;
 	private Integer checkerFireTaskBatchSize = DEFAULT_BATCHSIZE;
 	private Integer maxCheckAttemptTime = DEFAULT_ATTEMPTTIME;
+	private Integer checkerFireWorkerKeepAliveSeconds = DEFAULT_KEEPALIVESECONDS;
 
 	private Integer concurrentPushStatsInspectionWorkerNumber = DEFAULT_WORKER_NUMBER;
 	private Integer maxPushStatsInspectionWorkerNumber = DEFAULT_WORKER_NUMBER * 2;
@@ -59,6 +63,7 @@ public class OnsServerProperties {
 	private String pushStatsInspectionWorkerWaitStrategy = DEFAULT_WAITSTRATEGY;
 	private Integer pushStatsInspectionBatchSize = DEFAULT_BATCHSIZE;
 	private Integer maxPushStatsInspectionAttemptTime = DEFAULT_ATTEMPTTIME;
+	private Integer pushStatsInspectionKeepAliveSeconds = DEFAULT_KEEPALIVESECONDS;
 
 	private Integer checkerFireIntervalSeconds = DEFAULT_INTERVAL_SECONDS;
 	private Integer checkerFireTaskStartDelaySeconds = DEFAULT_TASK_DELAY_SECONDS;
@@ -258,5 +263,21 @@ public class OnsServerProperties {
 	public void setMaxPushStatsInspectionAttemptTime(Integer maxPushStatsInspectionAttemptTime) {
 		Assert.isTrue(maxPushStatsInspectionAttemptTime > 0, "maxPushStatsInspectionAttemptTime cannot be negative");
 		this.maxPushStatsInspectionAttemptTime = maxPushStatsInspectionAttemptTime;
+	}
+
+	public Integer getCheckerFireWorkerKeepAliveSeconds() {
+		return checkerFireWorkerKeepAliveSeconds;
+	}
+
+	public void setCheckerFireWorkerKeepAliveSeconds(Integer checkerFireWorkerKeepAliveSeconds) {
+		this.checkerFireWorkerKeepAliveSeconds = checkerFireWorkerKeepAliveSeconds;
+	}
+
+	public Integer getPushStatsInspectionKeepAliveSeconds() {
+		return pushStatsInspectionKeepAliveSeconds;
+	}
+
+	public void setPushStatsInspectionKeepAliveSeconds(Integer pushStatsInspectionKeepAliveSeconds) {
+		this.pushStatsInspectionKeepAliveSeconds = pushStatsInspectionKeepAliveSeconds;
 	}
 }

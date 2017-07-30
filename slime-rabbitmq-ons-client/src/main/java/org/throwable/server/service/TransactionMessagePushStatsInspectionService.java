@@ -17,10 +17,10 @@ import org.throwable.configuration.OnsServerProperties;
 import org.throwable.server.constants.PushStats;
 import org.throwable.server.dao.TransactionLogDao;
 import org.throwable.server.dao.TransactionMessageDao;
+import org.throwable.server.executor.disruptor.CallableTaskHandler;
 import org.throwable.server.executor.disruptor.WaitStrategyType;
 import org.throwable.server.model.TransactionLog;
 import org.throwable.server.model.TransactionMessage;
-import org.throwable.server.executor.disruptor.CallableTaskHandler;
 import org.throwable.server.task.TransactionMessagePushStatsInspectionTaskDisruptor;
 import org.throwable.support.TransactionTemplateProvider;
 
@@ -74,6 +74,7 @@ public class TransactionMessagePushStatsInspectionService extends AbstractRabbit
 				onsServerProperties.getPushStatsInspectionWorkerPrefix(),
 				onsServerProperties.getPushStatsInspectionQueueCapacity(),
 				onsServerProperties.getMaxPushStatsInspectionWorkerNumber(),
+				onsServerProperties.getPushStatsInspectionKeepAliveSeconds(),
 				WaitStrategyType.parse(onsServerProperties.getPushStatsInspectionWorkerWaitStrategy()),
 				taskHandlers
 		);
@@ -109,46 +110,43 @@ public class TransactionMessagePushStatsInspectionService extends AbstractRabbit
 	}
 
 	private Callable<Void> createPushStatsInspectionTask(final List<TransactionLog> records) {
-		return new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				for (TransactionLog transactionLog : records) {
-					PushStats pushStatsCallback
-							= rabbitTemplate.execute(channel -> {
-						TransactionMessage transactionMessage = transactionMessageDao.fetchById(transactionLog.getTransactionMessageId());
-						if (null != transactionMessage) {
-							String queue = transactionMessage.getQueue();
-							String exchange = transactionMessage.getExchange();
-							String routingKey = transactionMessage.getRoutingKey();
-							String exchangeType = transactionMessage.getExchangeType();
-							String headers = transactionMessage.getHeaders();
-							declareIfNecessary(queue, exchange, routingKey, exchangeType, headers);
-							MessagePropertiesBuilder builder = MessagePropertiesBuilder.newInstance();
-							builder.setHeader(Constants.UNIQUECODE_KEY, transactionLog.getUniqueCode());
-							channel.confirmSelect();
-							AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(builder.build());
-							channel.basicPublish(exchange, routingKey, basicProperties,
-									transactionMessage.getContent().getBytes(Constants.ENCODING));
-							if (channel.waitForConfirms(confirmTimeoutSeconds * 1000)) {
-								return PushStats.SUCCESS;
-							}
-							if (log.isWarnEnabled()) {
-								log.warn(String.format("Publish and Confirm message for pushStats inspection failed,uniqueCode:%s,transactionId:%s",
-										transactionLog.getUniqueCode(), transactionLog.getTransactionId()));
-							}
-							return PushStats.FAIL;
+		return () -> {
+			for (TransactionLog transactionLog : records) {
+				PushStats pushStatsCallback
+						= rabbitTemplate.execute(channel -> {
+					TransactionMessage transactionMessage = transactionMessageDao.fetchById(transactionLog.getTransactionMessageId());
+					if (null != transactionMessage) {
+						String queue = transactionMessage.getQueue();
+						String exchange = transactionMessage.getExchange();
+						String routingKey = transactionMessage.getRoutingKey();
+						String exchangeType = transactionMessage.getExchangeType();
+						String headers = transactionMessage.getHeaders();
+						declareIfNecessary(queue, exchange, routingKey, exchangeType, headers);
+						MessagePropertiesBuilder builder = MessagePropertiesBuilder.newInstance();
+						builder.setHeader(Constants.UNIQUECODE_KEY, transactionLog.getUniqueCode());
+						channel.confirmSelect();
+						AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(builder.build());
+						channel.basicPublish(exchange, routingKey, basicProperties,
+								transactionMessage.getContent().getBytes(Constants.ENCODING));
+						if (channel.waitForConfirms(confirmTimeoutSeconds * 1000)) {
+							return PushStats.SUCCESS;
+						}
+						if (log.isWarnEnabled()) {
+							log.warn(String.format("Publish and Confirm message for pushStats inspection failed,uniqueCode:%s,transactionId:%s",
+									transactionLog.getUniqueCode(), transactionLog.getTransactionId()));
 						}
 						return PushStats.FAIL;
-					});
-					transactionLog.setPushStats(pushStatsCallback.toString());
-					transactionLog.setPushTime(new Date());
-					transactionLog.setPushAttemptTime(transactionLog.getPushAttemptTime() + 1);
-				}
-				transactionTemplateProvider.getTransactionTemplate(TransactionDefinition.PROPAGATION_REQUIRES_NEW,
-						TransactionDefinition.ISOLATION_READ_COMMITTED)
-						.execute(status -> transactionLogDao.batchUpdatePushStats(records));
-				return null;
+					}
+					return PushStats.FAIL;
+				});
+				transactionLog.setPushStats(pushStatsCallback.toString());
+				transactionLog.setPushTime(new Date());
+				transactionLog.setPushAttemptTime(transactionLog.getPushAttemptTime() + 1);
 			}
+			transactionTemplateProvider.getTransactionTemplate(TransactionDefinition.PROPAGATION_REQUIRES_NEW,
+					TransactionDefinition.ISOLATION_READ_COMMITTED)
+					.execute(status -> transactionLogDao.batchUpdatePushStats(records));
+			return null;
 		};
 	}
 }

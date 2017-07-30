@@ -1,0 +1,26 @@
+server:
+  port: 9090
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    password: guest
+    username: guest
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: root
+    url: jdbc:mysql://localhost:3306/slime_ons?useUnicode=true&characterEncoding=UTF-8&useSSL=false
+slime:
+    ons:
+      client:
+        halfMessageQueue: slime.ons.halfMessageQueue
+        transactionCheckerQueue: slime.ons.transactionCheckerQueue
+        fireTransactionQueue: slime.ons.fireTransactionQueue
+      server:
+        halfMessageQueue: slime.ons.halfMessageQueue
+        transactionCheckerQueue: slime.ons.transactionCheckerQueue
+        fireTransactionQueue: slime.ons.fireTransactionQueue
+logging:
+  level:
+    org.springframework.jdbc.core.JdbcTemplate: debug

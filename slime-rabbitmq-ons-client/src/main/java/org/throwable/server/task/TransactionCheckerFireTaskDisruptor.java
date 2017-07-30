@@ -16,8 +16,9 @@ public class TransactionCheckerFireTaskDisruptor extends AbstractTaskDispatcher 
 											   String threadPrefix,
 											   int bufferSize,
 											   int reserveWorkersNumbers,
+											   int keepAliveSeconds,
 											   WaitStrategyType waitStrategyType,
 											   CallableTaskHandler[] taskHandlers) {
-		super(workerNumbers, threadPrefix, bufferSize, reserveWorkersNumbers, waitStrategyType, taskHandlers);
+		super(workerNumbers, threadPrefix, bufferSize, reserveWorkersNumbers,keepAliveSeconds, waitStrategyType, taskHandlers);
 	}
 }
