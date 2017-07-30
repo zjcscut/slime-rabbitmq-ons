@@ -3,21 +3,24 @@ package org.throwable.server.service;
 import com.rabbitmq.client.AMQP;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.MessagePropertiesBuilder;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionDefinition;
 import org.throwable.common.constants.Constants;
 import org.throwable.common.constants.FireTransactionStats;
 import org.throwable.common.constants.LocalTransactionStats;
+import org.throwable.common.constants.RejectExecutionHandlerEnum;
 import org.throwable.configuration.OnsServerProperties;
 import org.throwable.server.dao.TransactionLogDao;
 import org.throwable.server.dao.TransactionMessageDao;
-import org.throwable.server.executor.disruptor.WaitStrategyType;
 import org.throwable.server.model.TransactionLog;
 import org.throwable.server.model.TransactionMessage;
-import org.throwable.server.executor.disruptor.CallableTaskHandler;
-import org.throwable.server.task.TransactionCheckerFireTaskDisruptor;
+import org.throwable.server.task.TransactionCheckerFireTaskDispatcher;
 import org.throwable.support.TransactionTemplateProvider;
 
 import java.util.Date;
@@ -32,9 +35,10 @@ import java.util.concurrent.Callable;
  */
 @Service
 @Slf4j
-public class TransactionCheckerFireService extends AbstractRabbitmqSupportableService implements InitializingBean {
+public class TransactionCheckerFireService extends AbstractRabbitmqSupportableService
+		implements InitializingBean, BeanFactoryAware {
 
-	private TransactionCheckerFireTaskDisruptor disruptor;
+	private TransactionCheckerFireTaskDispatcher dispatcher;
 	private Integer confirmTimeoutSeconds;
 	private String transactionCheckerQueue;
 
@@ -50,23 +54,28 @@ public class TransactionCheckerFireService extends AbstractRabbitmqSupportableSe
 	@Autowired
 	private TransactionTemplateProvider transactionTemplateProvider;
 
+	private DefaultListableBeanFactory beanFactory;
+
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.beanFactory = (DefaultListableBeanFactory) beanFactory;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Integer concurrentWorkerNumbers = onsServerProperties.getConcurrentCheckerFireWorkerNumber();
 		this.confirmTimeoutSeconds = onsServerProperties.getConfirmTimeoutSeconds();
 		this.transactionCheckerQueue = onsServerProperties.getTransactionCheckerQueue();
-		CallableTaskHandler[] taskHandlers = new CallableTaskHandler[concurrentWorkerNumbers];
-		for (int i = 0; i < concurrentWorkerNumbers; i++) {
-			taskHandlers[i] = new CallableTaskHandler();
-		}
-		this.disruptor = new TransactionCheckerFireTaskDisruptor(
-				concurrentWorkerNumbers,
-				onsServerProperties.getCheckerFireWorkerPrefix(),
-				onsServerProperties.getCheckerFireQueueCapacity(),
+		this.dispatcher = new TransactionCheckerFireTaskDispatcher(
+				onsServerProperties.getConcurrentCheckerFireWorkerNumber(),
 				onsServerProperties.getMaxCheckerFireWorkerNumber(),
-				WaitStrategyType.parse(onsServerProperties.getCheckerFireWorkerWaitStrategy()),
-				taskHandlers
+				onsServerProperties.getCheckerFireQueueCapacity(),
+				onsServerProperties.getCheckerFireWorkerKeepAliveSeconds(),
+				RejectExecutionHandlerEnum.parse(onsServerProperties.getCheckerFireWorkerRejectExecutionHandlerType()),
+				onsServerProperties.getCheckerFireWorkerPrefix()
 		);
+		beanFactory.registerSingleton(Constants.TRANSACTIONCHECKERFIRETASKDISPATCHER_BEANNAME, dispatcher);
+		this.dispatcher = beanFactory.getBean(Constants.TRANSACTIONCHECKERFIRETASKDISPATCHER_BEANNAME,
+				TransactionCheckerFireTaskDispatcher.class);
 	}
 
 	public void doFireTransactionChecker() {
@@ -86,7 +95,7 @@ public class TransactionCheckerFireService extends AbstractRabbitmqSupportableSe
 				recordSize = 0;
 			} else {
 				recordSize = records.size();
-				this.disruptor.submit(createFireTransactionCheckerTask(records));
+				this.dispatcher.submit(createFireTransactionCheckerTask(records));
 				pageIndex++;
 			}
 		} while (recordSize > 0);

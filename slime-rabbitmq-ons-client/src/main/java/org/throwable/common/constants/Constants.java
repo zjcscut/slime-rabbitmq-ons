@@ -56,6 +56,8 @@ public interface Constants {
 
     String CALLABLETASKHANDLER_BEANNAME = "callableTaskHandler";
 
-    String TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISRUPTOR_BEANNAME = "transactionMessagePushStatsInspectionTaskDisruptor";
+    String TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISPATCHER_BEANNAME = "transactionMessagePushStatsInspectionTaskDispatcher";
+
+	String TRANSACTIONCHECKERFIRETASKDISPATCHER_BEANNAME = "transactionCheckerFireTaskDispatcher";
 
 }

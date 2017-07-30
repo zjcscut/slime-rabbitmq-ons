@@ -35,8 +35,9 @@ public class OnsServerProperties {
 	private static final Integer DEFAULT_TASK_DELAY_SECONDS = 10;
 	private static final String DEFAULT_CHECKERFIREWORKERPREFIX = "checkerFireWorker";
 	private static final String DEFAULT_PUSHSTATSINSPECTIONWORKERPREFIX = "pushStatsInspectionWorker";
-	private static final String DEFAULT_WAITSTRATEGY = "BLOCKING_WAIT";
+	private static final String DEFAULT_REJECTEXECUTIONHANDLER = "CallerRunsPolicy";
 	private static final Integer DEFAULT_ATTEMPTTIME = 3;
+	private static final Integer DEFAULT_KEEPALIVESECONDS = 60;
 
 
 	private String halfMessageQueue = DEFAULT_HALFMESSAGE_QUEUE;
@@ -48,17 +49,19 @@ public class OnsServerProperties {
 	private Integer maxCheckerFireWorkerNumber = DEFAULT_WORKER_NUMBER * 2;
 	private Integer checkerFireQueueCapacity = DEFAULT_QUEUECAPACITY;
 	private String checkerFireWorkerPrefix = DEFAULT_CHECKERFIREWORKERPREFIX;
-	private String checkerFireWorkerWaitStrategy = DEFAULT_WAITSTRATEGY;
+	private String checkerFireWorkerRejectExecutionHandlerType = DEFAULT_REJECTEXECUTIONHANDLER;
 	private Integer checkerFireTaskBatchSize = DEFAULT_BATCHSIZE;
 	private Integer maxCheckAttemptTime = DEFAULT_ATTEMPTTIME;
+	private Integer checkerFireWorkerKeepAliveSeconds = DEFAULT_KEEPALIVESECONDS;
 
 	private Integer concurrentPushStatsInspectionWorkerNumber = DEFAULT_WORKER_NUMBER;
 	private Integer maxPushStatsInspectionWorkerNumber = DEFAULT_WORKER_NUMBER * 2;
 	private Integer pushStatsInspectionQueueCapacity = DEFAULT_QUEUECAPACITY;
 	private String pushStatsInspectionWorkerPrefix = DEFAULT_PUSHSTATSINSPECTIONWORKERPREFIX;
-	private String pushStatsInspectionWorkerWaitStrategy = DEFAULT_WAITSTRATEGY;
+	private String pushStatsInspectionRejectExecutionHandlerType = DEFAULT_REJECTEXECUTIONHANDLER;
 	private Integer pushStatsInspectionBatchSize = DEFAULT_BATCHSIZE;
 	private Integer maxPushStatsInspectionAttemptTime = DEFAULT_ATTEMPTTIME;
+	private Integer pushStatsInspectionKeepAliveSeconds = DEFAULT_KEEPALIVESECONDS;
 
 	private Integer checkerFireIntervalSeconds = DEFAULT_INTERVAL_SECONDS;
 	private Integer checkerFireTaskStartDelaySeconds = DEFAULT_TASK_DELAY_SECONDS;
@@ -208,20 +211,20 @@ public class OnsServerProperties {
 		this.pushStatsInspectionWorkerPrefix = pushStatsInspectionWorkerPrefix;
 	}
 
-	public String getCheckerFireWorkerWaitStrategy() {
-		return checkerFireWorkerWaitStrategy;
+	public String getCheckerFireWorkerRejectExecutionHandlerType() {
+		return checkerFireWorkerRejectExecutionHandlerType;
 	}
 
-	public void setCheckerFireWorkerWaitStrategy(String checkerFireWorkerWaitStrategy) {
-		this.checkerFireWorkerWaitStrategy = checkerFireWorkerWaitStrategy;
+	public void setCheckerFireWorkerRejectExecutionHandlerType(String checkerFireWorkerRejectExecutionHandlerType) {
+		this.checkerFireWorkerRejectExecutionHandlerType = checkerFireWorkerRejectExecutionHandlerType;
 	}
 
-	public String getPushStatsInspectionWorkerWaitStrategy() {
-		return pushStatsInspectionWorkerWaitStrategy;
+	public String getPushStatsInspectionRejectExecutionHandlerType() {
+		return pushStatsInspectionRejectExecutionHandlerType;
 	}
 
-	public void setPushStatsInspectionWorkerWaitStrategy(String pushStatsInspectionWorkerWaitStrategy) {
-		this.pushStatsInspectionWorkerWaitStrategy = pushStatsInspectionWorkerWaitStrategy;
+	public void setPushStatsInspectionRejectExecutionHandlerType(String pushStatsInspectionRejectExecutionHandlerType) {
+		this.pushStatsInspectionRejectExecutionHandlerType = pushStatsInspectionRejectExecutionHandlerType;
 	}
 
 	public Integer getCheckerFireTaskBatchSize() {
@@ -258,5 +261,21 @@ public class OnsServerProperties {
 	public void setMaxPushStatsInspectionAttemptTime(Integer maxPushStatsInspectionAttemptTime) {
 		Assert.isTrue(maxPushStatsInspectionAttemptTime > 0, "maxPushStatsInspectionAttemptTime cannot be negative");
 		this.maxPushStatsInspectionAttemptTime = maxPushStatsInspectionAttemptTime;
+	}
+
+	public Integer getCheckerFireWorkerKeepAliveSeconds() {
+		return checkerFireWorkerKeepAliveSeconds;
+	}
+
+	public void setCheckerFireWorkerKeepAliveSeconds(Integer checkerFireWorkerKeepAliveSeconds) {
+		this.checkerFireWorkerKeepAliveSeconds = checkerFireWorkerKeepAliveSeconds;
+	}
+
+	public Integer getPushStatsInspectionKeepAliveSeconds() {
+		return pushStatsInspectionKeepAliveSeconds;
+	}
+
+	public void setPushStatsInspectionKeepAliveSeconds(Integer pushStatsInspectionKeepAliveSeconds) {
+		this.pushStatsInspectionKeepAliveSeconds = pushStatsInspectionKeepAliveSeconds;
 	}
 }

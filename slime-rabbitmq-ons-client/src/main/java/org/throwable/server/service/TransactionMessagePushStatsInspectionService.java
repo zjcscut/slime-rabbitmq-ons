@@ -13,15 +13,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.TransactionDefinition;
 import org.throwable.common.constants.Constants;
 import org.throwable.common.constants.LocalTransactionStats;
+import org.throwable.common.constants.RejectExecutionHandlerEnum;
 import org.throwable.configuration.OnsServerProperties;
 import org.throwable.server.constants.PushStats;
 import org.throwable.server.dao.TransactionLogDao;
 import org.throwable.server.dao.TransactionMessageDao;
-import org.throwable.server.executor.disruptor.WaitStrategyType;
 import org.throwable.server.model.TransactionLog;
 import org.throwable.server.model.TransactionMessage;
-import org.throwable.server.executor.disruptor.CallableTaskHandler;
-import org.throwable.server.task.TransactionMessagePushStatsInspectionTaskDisruptor;
+import org.throwable.server.task.TransactionMessagePushStatsInspectionTaskDispatcher;
 import org.throwable.support.TransactionTemplateProvider;
 
 import java.util.Date;
@@ -39,7 +38,7 @@ import java.util.concurrent.Callable;
 public class TransactionMessagePushStatsInspectionService extends AbstractRabbitmqSupportableService
 		implements InitializingBean, BeanFactoryAware {
 
-	private TransactionMessagePushStatsInspectionTaskDisruptor disruptor;
+	private TransactionMessagePushStatsInspectionTaskDispatcher dispatcher;
 	private Integer confirmTimeoutSeconds;
 
 	@Autowired
@@ -63,24 +62,18 @@ public class TransactionMessagePushStatsInspectionService extends AbstractRabbit
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		Integer concurrentWorkerNumbers = onsServerProperties.getConcurrentPushStatsInspectionWorkerNumber();
 		this.confirmTimeoutSeconds = onsServerProperties.getConfirmTimeoutSeconds();
-		CallableTaskHandler[] taskHandlers = new CallableTaskHandler[concurrentWorkerNumbers];
-		for (int i = 0; i < concurrentWorkerNumbers; i++) {
-			taskHandlers[i] = beanFactory.getBean(Constants.CALLABLETASKHANDLER_BEANNAME, CallableTaskHandler.class);
-		}
-		this.disruptor = new TransactionMessagePushStatsInspectionTaskDisruptor(
-				concurrentWorkerNumbers,
-				onsServerProperties.getPushStatsInspectionWorkerPrefix(),
-				onsServerProperties.getPushStatsInspectionQueueCapacity(),
+		this.dispatcher = new TransactionMessagePushStatsInspectionTaskDispatcher(
+				onsServerProperties.getConcurrentPushStatsInspectionWorkerNumber(),
 				onsServerProperties.getMaxPushStatsInspectionWorkerNumber(),
-				WaitStrategyType.parse(onsServerProperties.getPushStatsInspectionWorkerWaitStrategy()),
-				taskHandlers
+				onsServerProperties.getPushStatsInspectionQueueCapacity(),
+				onsServerProperties.getPushStatsInspectionKeepAliveSeconds(),
+				RejectExecutionHandlerEnum.parse(onsServerProperties.getPushStatsInspectionRejectExecutionHandlerType()),
+				onsServerProperties.getPushStatsInspectionWorkerPrefix()
 		);
-		beanFactory.registerSingleton(Constants.TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISRUPTOR_BEANNAME, disruptor);
-		this.disruptor = beanFactory.getBean(Constants.TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISRUPTOR_BEANNAME,
-				TransactionMessagePushStatsInspectionTaskDisruptor.class);
-		this.disruptor.start();
+		beanFactory.registerSingleton(Constants.TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISPATCHER_BEANNAME, dispatcher);
+		this.dispatcher = beanFactory.getBean(Constants.TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISPATCHER_BEANNAME,
+				TransactionMessagePushStatsInspectionTaskDispatcher.class);
 	}
 
 	public void doPushStatsInspection() {
@@ -102,7 +95,7 @@ public class TransactionMessagePushStatsInspectionService extends AbstractRabbit
 				recordSize = 0;
 			} else {
 				recordSize = records.size();
-				this.disruptor.submit(createPushStatsInspectionTask(records));
+				this.dispatcher.submit(createPushStatsInspectionTask(records));
 				pageIndex++;
 			}
 		} while (recordSize > 0);

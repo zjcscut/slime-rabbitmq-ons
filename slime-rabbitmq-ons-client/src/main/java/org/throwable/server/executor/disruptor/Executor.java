@@ -1,6 +1,7 @@
 package org.throwable.server.executor.disruptor;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 /**
  * @author throwable
@@ -10,6 +11,5 @@ import java.util.concurrent.Callable;
  */
 public interface Executor<T> {
 
-	void submit(Callable<T> callable);
-
+	Future<T> submit(Callable<T> callable);
 }
