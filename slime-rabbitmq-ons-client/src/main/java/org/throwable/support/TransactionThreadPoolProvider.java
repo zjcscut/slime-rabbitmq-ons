@@ -2,7 +2,7 @@ package org.throwable.support;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
-import org.throwable.configuration.OnsProperties;
+import org.throwable.configuration.OnsClientProperties;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,26 +16,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class TransactionThreadPoolProvider implements InitializingBean {
 
-    private final OnsProperties onsProperties;
+    private final OnsClientProperties onsClientProperties;
     private ThreadPoolExecutor executor;
 
-    public TransactionThreadPoolProvider(OnsProperties onsProperties) {
-        this.onsProperties = onsProperties;
+    public TransactionThreadPoolProvider(OnsClientProperties onsClientProperties) {
+        this.onsClientProperties = onsClientProperties;
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        this.executor = new ThreadPoolExecutor(onsProperties.getTransactionThreadPoolCoreSize(),
-                onsProperties.getTransactionThreadPoolMaxSize(),
-                onsProperties.getTransactionThreadKeepAliveSeconds(),
+        this.executor = new ThreadPoolExecutor(onsClientProperties.getTransactionThreadPoolCoreSize(),
+                onsClientProperties.getTransactionThreadPoolMaxSize(),
+                onsClientProperties.getTransactionThreadKeepAliveSeconds(),
                 TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(onsProperties.getTransactionThreadPoolQueueCapacity()),
+                new LinkedBlockingQueue<>(onsClientProperties.getTransactionThreadPoolQueueCapacity()),
                 new ThreadFactory() {
                     private final AtomicInteger counter = new AtomicInteger(1);
                     @Override
                     public Thread newThread(Runnable r) {
                         Thread thread = new Thread(r);
-                        thread.setName(onsProperties.getTransactionThreadNamePrefix() + "-thread-" + counter.getAndIncrement());
+                        thread.setName(onsClientProperties.getTransactionThreadNamePrefix() + "-thread-" + counter.getAndIncrement());
                         return thread;
                     }
                 },

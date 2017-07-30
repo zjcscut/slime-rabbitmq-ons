@@ -3,9 +3,11 @@ CREATE TABLE `t_transaction_message`(
   uniqueCode VARCHAR(60) COMMENT '消息唯一标识',
   queue VARCHAR(100) COMMENT '目标队列',
   exchange VARCHAR(100) COMMENT '目标exchange',
+  exchangeType VARCHAR(10) COMMENT '目标exchange类型',
+  headers VARCHAR(200) COMMENT 'headers',
   routingKey VARCHAR(100) COMMENT '目标routingKey',
   content VARCHAR(2000) COMMENT '消息体字符串',
-  UNIQUE unique_uniquecode(`uniqueCode`)
+  UNIQUE unique_uniqueCode(`uniqueCode`)
 )COMMENT '事务消息表';
 
 CREATE TABLE `t_transaction_log`(
@@ -20,8 +22,12 @@ CREATE TABLE `t_transaction_log`(
   checkAttemptTime TINYINT COMMENT 'check重试次数' DEFAULT 0,
   pushAttemptTime TINYINT COMMENT 'push重试次数' DEFAULT 0,
   createTime DATETIME COMMENT '创建时间' DEFAULT CURRENT_TIMESTAMP(),
-  updateTime DATETIME COMMENT '更新时间',
-  UNIQUE unique_uniquecode(`uniqueCode`),
-  KEY key_messageId(`messageId`)
+  transactionEndTime DATETIME COMMENT '事务结束时间',
+  pushTime DATETIME COMMENT '推送时间',
+  fireTransactionTime DATETIME COMMENT '事务触发时间',
+  checkerClassName VARCHAR(60) COMMENT 'checker全类名',
+  UNIQUE unique_uniqueCode(`uniqueCode`),
+  KEY idx_messageId(`messageId`),
+  KEY idx_creditTime(`createTime`)
 )COMMENT '事务日志表';
 

@@ -28,18 +28,18 @@ import java.util.List;
  * @description
  * @since 2017/7/27 0:03
  */
-@EnableConfigurationProperties(value = {OnsProperties.class, RabbitProperties.class})
+@EnableConfigurationProperties(value = {OnsClientProperties.class, RabbitProperties.class})
 @Configuration
 public class RabbitmqConfiguration {
 
     private static final int DEFAILT_CONCURRENTCONSUMERS = 20;
     private static final int DEFAILT_MAXCONCURRENTCONSUMERS = 50;
 
-    private final OnsProperties onsProperties;
+    private final OnsClientProperties onsClientProperties;
     private final RabbitProperties rabbitProperties;
 
-    public RabbitmqConfiguration(OnsProperties onsProperties, RabbitProperties rabbitProperties) {
-        this.onsProperties = onsProperties;
+    public RabbitmqConfiguration(OnsClientProperties onsClientProperties, RabbitProperties rabbitProperties) {
+        this.onsClientProperties = onsClientProperties;
         this.rabbitProperties = rabbitProperties;
     }
 
@@ -117,9 +117,9 @@ public class RabbitmqConfiguration {
     public RabbitAdmin rabbitAdmin(CachingConnectionFactory cachingConnectionFactory) {
         RabbitAdmin rabbitAdmin = new RabbitAdmin(cachingConnectionFactory);
         List<String> queuesToDeclare = new ArrayList<>();
-        queuesToDeclare.add(onsProperties.getHalfMessageQueue());
-        queuesToDeclare.add(onsProperties.getTransactionCheckerQueue());
-        queuesToDeclare.add(onsProperties.getFireTransactionQueue());
+        queuesToDeclare.add(onsClientProperties.getHalfMessageQueue());
+        queuesToDeclare.add(onsClientProperties.getTransactionCheckerQueue());
+        queuesToDeclare.add(onsClientProperties.getFireTransactionQueue());
         for (String queueToDeclare : queuesToDeclare) {
             Queue queue = new Queue(queueToDeclare, true, false, false, null);
             rabbitAdmin.declareQueue(queue);

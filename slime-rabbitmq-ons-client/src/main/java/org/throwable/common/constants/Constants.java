@@ -16,7 +16,9 @@ public interface Constants {
 
     String ROUTINGKEY_KEY = "routingKey";
 
-    String ARGS_KEY = "args";
+	String EXCHANGETYPE_KEY = "exchangeType";
+
+    String HEADERS_KEY = "headers";
 
     String MESSAGEID_KEY = "messageId";
 
@@ -34,10 +36,26 @@ public interface Constants {
 
     String RABBITADMIN_KEY = "rabbitAdmin";
 
-    String HALFMESSAGEQUEUE_PROPERTIES_KEY = "#{onsProperties['halfMessageQueue']}";
+    String HALFMESSAGEQUEUE_PROPERTIES_KEY = "#{onsClientProperties['halfMessageQueue']}";
 
-    String FIRETRANSACTIONQUEUE_PROPERTIES_KEY = "#{onsProperties['fireTransactionQueue']}";
+    String FIRETRANSACTIONQUEUE_PROPERTIES_KEY = "#{onsClientProperties['fireTransactionQueue']}";
 
-    String TRANSACTIONCHECKERQUEUE_PROPERTIES_KEY = "#{onsProperties['transactionCheckerQueue']}";
+    String TRANSACTIONCHECKERQUEUE_PROPERTIES_KEY = "#{onsClientProperties['transactionCheckerQueue']}";
+
+    String APPLICATIONCONTEXT_KEY = "applicationContext";
+
+    String QUARTZ_JOB_GROUP = "slime-ons";
+
+    String PUSHSTATSINSPECTIONJOB_KEY = "pushStatsInspectionJob";
+
+    String FIRETRANSACTIONCHECKERJOB_KEY = "fireTransactionCheckerJob";
+
+    String FIRETRANSACTIONCHECKERTRIGGER_KEY = "fireTransactionCheckerTrigger";
+
+    String PUSHSTATSINSPECTIONTRIGGER_KEY = "pushStatsInspectionTrigger";
+
+    String CALLABLETASKHANDLER_BEANNAME = "callableTaskHandler";
+
+    String TRANSACTIONMESSAGEPUSHSTATSINSPECTIONTASKDISRUPTOR_BEANNAME = "transactionMessagePushStatsInspectionTaskDisruptor";
 
 }

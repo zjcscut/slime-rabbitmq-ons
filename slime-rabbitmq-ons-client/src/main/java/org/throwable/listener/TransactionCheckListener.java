@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 import org.throwable.common.constants.Constants;
 import org.throwable.common.constants.LocalTransactionStats;
 import org.throwable.common.constants.SendStats;
-import org.throwable.configuration.OnsProperties;
+import org.throwable.configuration.OnsClientProperties;
 import org.throwable.exception.LocalTransactionCheckException;
 import org.throwable.exception.SendMqMessageException;
 import org.throwable.support.LocalTransactionChecker;
@@ -44,8 +44,8 @@ public class TransactionCheckListener implements EnvironmentAware, BeanFactoryAw
 
     @Override
     public void setEnvironment(Environment environment) {
-        this.halfMessageQueue = environment.getProperty(OnsProperties.HALFMESSAGE_QUEUE_KEY,
-                OnsProperties.DEFAULT_HALFMESSAGE_QUEUE);
+        this.halfMessageQueue = environment.getProperty(OnsClientProperties.HALFMESSAGE_QUEUE_KEY,
+                OnsClientProperties.DEFAULT_HALFMESSAGE_QUEUE);
     }
 
     @Override

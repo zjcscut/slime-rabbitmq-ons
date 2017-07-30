@@ -2,15 +2,12 @@ package org.throwable.server;
 
 import com.rabbitmq.client.AMQP;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.Environment;
-import org.springframework.retry.RetryCallback;
-import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -18,21 +15,17 @@ import org.throwable.common.constants.Constants;
 import org.throwable.common.constants.FireTransactionStats;
 import org.throwable.common.constants.LocalTransactionStats;
 import org.throwable.common.constants.SendStats;
-import org.throwable.configuration.OnsProperties;
-import org.throwable.exception.SendMqMessageException;
+import org.throwable.configuration.OnsServerProperties;
 import org.throwable.server.constants.PushStats;
 import org.throwable.server.dao.TransactionLogDao;
 import org.throwable.server.dao.TransactionMessageDao;
 import org.throwable.server.model.TransactionLog;
 import org.throwable.server.model.TransactionMessage;
-import org.throwable.support.RabbitmqMessagePropertiesConverter;
-import org.throwable.support.RetryTemplateProvider;
+import org.throwable.server.service.AbstractRabbitmqSupportableService;
 import org.throwable.support.TransactionTemplateProvider;
 import org.throwable.support.id.KeyGenerator;
 
 import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author throwable
@@ -42,22 +35,11 @@ import java.util.Set;
  */
 @Slf4j
 @Component
-public class HalfMessageListener implements EnvironmentAware {
+public class HalfMessageListener extends AbstractRabbitmqSupportableService implements EnvironmentAware {
 
-	private static final Set<String> declareHolders = new HashSet<>();
-
-	private volatile RabbitmqMessagePropertiesConverter converter = new RabbitmqMessagePropertiesConverter();
 
 	private String fireTransactionQueue;
-
-	@Autowired
-	private RabbitTemplate rabbitTemplate;
-
-	@Autowired
-	private RetryTemplateProvider retryTemplateProvider;
-
-	@Autowired
-	private RabbitAdmin rabbitAdmin;
+	private Integer confirmTimeoutSeconds;
 
 	@Autowired
 	private TransactionLogDao transactionLogDao;
@@ -73,8 +55,10 @@ public class HalfMessageListener implements EnvironmentAware {
 
 	@Override
 	public void setEnvironment(Environment environment) {
-		this.fireTransactionQueue = environment.getProperty(OnsProperties.FIRETRANSACTION_QUEUE_KEY,
-				OnsProperties.DEFAULT_FIRETRANSACTION_QUEUE);
+		this.fireTransactionQueue = environment.getProperty(OnsServerProperties.FIRETRANSACTION_QUEUE_KEY,
+				OnsServerProperties.DEFAULT_FIRETRANSACTION_QUEUE);
+		this.confirmTimeoutSeconds = environment.getProperty(OnsServerProperties.CONFIRM_TIMEOUT_SECONDS_KEY,
+				Integer.class, OnsServerProperties.DEFAULT_CONFIRM_TIMEOUT_SECONDS);
 	}
 
 	@RabbitListener(queues = Constants.HALFMESSAGEQUEUE_PROPERTIES_KEY,
@@ -86,17 +70,21 @@ public class HalfMessageListener implements EnvironmentAware {
 		String queue = converter.getHeaderValue(messageProperties, Constants.QUEUE_KEY);
 		String exchange = converter.getHeaderValue(messageProperties, Constants.EXCHANGE_KEY);
 		String routingKey = converter.getHeaderValue(messageProperties, Constants.ROUTINGKEY_KEY);
+		String exchangeType = converter.getHeaderValue(messageProperties, Constants.EXCHANGETYPE_KEY);
+		String headers = converter.getHeaderValue(messageProperties, Constants.HEADERS_KEY);
 		String messageId = converter.getHeaderValue(messageProperties, Constants.MESSAGEID_KEY);
 		String uniqueCode = converter.getHeaderValue(messageProperties, Constants.UNIQUECODE_KEY);
+		String checkerClassName = converter.getHeaderValue(messageProperties, Constants.CHECKERCLASSNAME_KEY);
 		SendStats sendStats = converter.getHeaderValue(messageProperties, Constants.SENDSTATS_KEY, SendStats.class, SendStats.FAIL);
 		LocalTransactionStats localTransactionStats =
 				converter.getHeaderValue(messageProperties, Constants.LOCALTRANSACTIONSTATS_KEY, LocalTransactionStats.class, LocalTransactionStats.UNKNOWN);
 		switch (sendStats) {
 			case PREPARE:
-				processPrepareTransaction(message, body, messageId, uniqueCode, queue, exchange, routingKey, localTransactionStats);
+				processPrepareTransaction(message, body, messageId, uniqueCode, queue, exchange, exchangeType, headers,
+						routingKey, checkerClassName, localTransactionStats);
 				break;
 			case HALF_SUCCESS:
-				processHalfMessageTransaction(message, queue, exchange, routingKey, uniqueCode, localTransactionStats);
+				processHalfMessageTransaction(message, uniqueCode, localTransactionStats);
 				break;
 			case SUCCESS:
 				break;
@@ -111,18 +99,23 @@ public class HalfMessageListener implements EnvironmentAware {
 										   String uniqueCode,
 										   String queue,
 										   String exchange,
+										   String exchangeType,
+										   String headers,
 										   String routingKey,
+										   String checkerClassName,
 										   LocalTransactionStats localTransactionStats) {
 		TransactionTemplate transactionTemplate =
 				transactionTemplateProvider.getTransactionTemplate(TransactionDefinition.PROPAGATION_REQUIRES_NEW,
 						TransactionDefinition.ISOLATION_READ_COMMITTED);
-		final TransactionLog callback = transactionTemplate.execute(transactionStatus -> {
+		final TransactionLog transactionLogCallback = transactionTemplate.execute(transactionStatus -> {
 			TransactionMessage transactionMessage = new TransactionMessage();
 			transactionMessage.setContent(body);
 			transactionMessage.setQueue(queue);
 			transactionMessage.setExchange(exchange);
 			transactionMessage.setRoutingKey(routingKey);
 			transactionMessage.setUniqueCode(uniqueCode);
+			transactionMessage.setExchangeType(exchangeType);
+			transactionMessage.setHeaders(headers);
 			transactionMessageDao.save(transactionMessage);
 			TransactionLog transactionLog = new TransactionLog();
 			transactionLog.setMessageId(messageId);
@@ -131,91 +124,69 @@ public class HalfMessageListener implements EnvironmentAware {
 			transactionLog.setTransactionStats(localTransactionStats.toString());
 			transactionLog.setPushStats(PushStats.INIT.toString());
 			transactionLog.setFireTransactionStats(FireTransactionStats.INIT.toString());
+			transactionLog.setCheckerClassName(checkerClassName);
 			transactionLogDao.save(transactionLog, transactionMessage.getId());
 			return transactionLog;
 		});
-		RetryTemplate retryTemplate = retryTemplateProvider.getDefaultRetryTemplate();
 		FireTransactionStats fireTransactionStatsCallback
-				= retryTemplate.execute((RetryCallback<FireTransactionStats, SendMqMessageException>) context -> {
-			try {
-				return rabbitTemplate.execute(channel -> {
-					message.getMessageProperties().setHeader(Constants.TRANSACTIONID_KEY, callback.getTransactionId());
-					channel.confirmSelect();
-					AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(message.getMessageProperties());
-					channel.basicPublish(fireTransactionQueue, fireTransactionQueue, basicProperties, body.getBytes(Constants.ENCODING));
-					if (channel.waitForConfirms(5000)) {
-						return FireTransactionStats.SUCCESS;
-					}
-					throw new SendMqMessageException(String.format("Publish and Confirm message to fire transaction failed,uniqueCode:%s,transactionId:%s",
-							uniqueCode, callback.getTransactionId()));
-				});
-			} catch (Exception e) {
-				throw new SendMqMessageException(e);
+				= rabbitTemplate.execute(channel -> {
+			message.getMessageProperties().setHeader(Constants.TRANSACTIONID_KEY, transactionLogCallback.getTransactionId());
+			channel.confirmSelect();
+			AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(message.getMessageProperties());
+			channel.basicPublish(fireTransactionQueue, fireTransactionQueue, basicProperties, body.getBytes(Constants.ENCODING));
+			if (channel.waitForConfirms(confirmTimeoutSeconds * 1000)) {
+				return FireTransactionStats.SUCCESS;
 			}
-		}, context -> FireTransactionStats.FAIL);
-		transactionLogDao.updateFireTransactionStats(callback.getId(), fireTransactionStatsCallback.toString(), new Date());
+			if (log.isWarnEnabled()) {
+				log.warn(String.format("Publish and Confirm message to fire transaction failed,uniqueCode:%s,transactionId:%s",
+						uniqueCode, transactionLogCallback.getTransactionId()));
+			}
+			return FireTransactionStats.FAIL;
+		});
+		transactionLogDao.updateFireTransactionStats(transactionLogCallback.getId(), fireTransactionStatsCallback.toString(), new Date());
 	}
 
 	private void processHalfMessageTransaction(Message message,
-											   String queue,
-											   String exchange,
-											   String routingKey,
 											   String uniqueCode,
 											   LocalTransactionStats localTransactionStats) {
-		declareIfNecessary(queue, exchange, routingKey);
-		if (LocalTransactionStats.COMMITED.equals(localTransactionStats) ||
+		TransactionLog transactionLog = transactionLogDao.fetchByUniqueCode(uniqueCode);
+		if (null == transactionLog) {
+			return;
+		}
+		if (LocalTransactionStats.COMMITTED.equals(localTransactionStats) ||
 				LocalTransactionStats.ROLLBACK.equals(localTransactionStats)) {
-			transactionLogDao.updateTransactionStats(uniqueCode, localTransactionStats.toString(), new Date());
+			transactionLogDao.updateTransactionStats(transactionLog.getId(), localTransactionStats.toString(), new Date());
 
 		}
-		if (LocalTransactionStats.COMMITED.equals(localTransactionStats)) {
-			TransactionLog transactionLog = transactionLogDao.fetchByUniqueCode(uniqueCode);
+		if (LocalTransactionStats.COMMITTED.equals(localTransactionStats)) {
 			TransactionMessage transactionMessage = transactionMessageDao.fetchById(transactionLog.getTransactionMessageId());
 			if (null != transactionMessage) {
-				RetryTemplate retryTemplate = retryTemplateProvider.getDefaultRetryTemplate();
-				PushStats pushStatsCallback = retryTemplate.execute((RetryCallback<PushStats, SendMqMessageException>) context -> {
-					try {
-						return rabbitTemplate.execute(channel -> {
+				PushStats pushStatsCallback =
+						rabbitTemplate.execute(channel -> {
+							String queue = transactionMessage.getQueue();
+							String exchange = transactionMessage.getExchange();
+							String routingKey = transactionMessage.getRoutingKey();
+							String exchangeType = transactionMessage.getExchangeType();
+							String headers = transactionMessage.getHeaders();
+							declareIfNecessary(queue, exchange, routingKey, exchangeType, headers);
 							channel.confirmSelect();
 							AMQP.BasicProperties basicProperties = converter.convertToBasicProperties(message.getMessageProperties());
-							channel.basicPublish(exchange, routingKey, basicProperties, transactionMessage.getContent().getBytes(Constants.ENCODING));
-							if (channel.waitForConfirms(5000)) {
+							channel.basicPublish(transactionMessage.getExchange(),
+									transactionMessage.getRoutingKey(),
+									basicProperties,
+									transactionMessage.getContent().getBytes(Constants.ENCODING));
+							if (channel.waitForConfirms(confirmTimeoutSeconds * 1000)) {
 								return PushStats.SUCCESS;
 							}
-							throw new SendMqMessageException(String.format("Publish and Confirm message failed,uniqueCode:%s," +
-									"queue:%s,exchange:%s,routingKey:%s", uniqueCode, queue, exchange, routingKey));
+							if (log.isWarnEnabled()) {
+								log.warn(String.format("Publish and Confirm message failed,uniqueCode:%s," +
+										"queue:%s,exchange:%s,routingKey:%s", uniqueCode, queue, exchange, routingKey));
+							}
+							return PushStats.FAIL;
 						});
-					} catch (Exception e) {
-						throw new SendMqMessageException(e);
-					}
-				}, context -> PushStats.FAIL);
 				transactionLogDao.updatePushStats(transactionLog.getId(), pushStatsCallback.toString(), new Date());
 			}
 		}
-	}
-
-	private void declareIfNecessary(String queue, String exchange, String routingKey) {
-		String key = appendKey(queue, exchange, routingKey);
-		if (!declareHolders.contains(key)) {
-			if (null == exchange) {
-				rabbitAdmin.declareQueue(new Queue(queue, true, false, false));
-			} else {
-				Queue queueToUse = new Queue(queue, true, false, false);
-				rabbitAdmin.declareQueue(queueToUse);
-				DirectExchange exchangeToUse = new DirectExchange(exchange, true, false, null);
-				rabbitAdmin.declareExchange(exchangeToUse);
-				rabbitAdmin.declareBinding(BindingBuilder.bind(queueToUse).to(exchangeToUse).with(routingKey));
-			}
-			declareHolders.add(key);
-		}
-	}
-
-	private String appendKey(String... objects) {
-		StringBuilder keys = new StringBuilder();
-		for (String each : objects) {
-			keys.append(each).append("-");
-		}
-		return keys.substring(0, keys.lastIndexOf("-"));
 	}
 
 }

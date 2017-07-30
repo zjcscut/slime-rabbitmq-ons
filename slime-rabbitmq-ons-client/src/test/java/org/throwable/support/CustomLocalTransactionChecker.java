@@ -15,6 +15,6 @@ public class CustomLocalTransactionChecker implements LocalTransactionChecker {
 
 	@Override
 	public LocalTransactionStats doInTransactionCheck(Message message) {
-		return LocalTransactionStats.COMMITED;
+		return LocalTransactionStats.COMMITTED;
 	}
 }

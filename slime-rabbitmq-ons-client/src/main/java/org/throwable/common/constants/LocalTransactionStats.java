@@ -11,7 +11,7 @@ public enum LocalTransactionStats {
     /**
      * 已提交
      */
-    COMMITED,
+    COMMITTED,
 
     /**
      * 回滚

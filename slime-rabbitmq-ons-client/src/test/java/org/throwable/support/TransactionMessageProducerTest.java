@@ -9,11 +9,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.throwable.Application;
 import org.throwable.common.constants.LocalTransactionStats;
-import org.throwable.common.model.TransactionSendResult;
 
 import java.util.UUID;
-
-import static org.junit.Assert.*;
 
 /**
  * @author throwable
@@ -46,12 +43,13 @@ public class TransactionMessageProducerTest {
 							} catch (InterruptedException e) {
 								//ignore
 							}
-							return LocalTransactionStats.COMMITED;
+							return LocalTransactionStats.COMMITTED;
 						}
 					},
 					CustomLocalTransactionChecker.class,
 					"queue-1",
 					"queue-1",
+					"DIRECT",
 					"queue-1"
 
 			);

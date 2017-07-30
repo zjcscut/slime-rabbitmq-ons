@@ -24,7 +24,7 @@ public class TransactionMessageDao {
 	private JdbcTemplate jdbcTemplate;
 
 	public TransactionMessage save(final TransactionMessage transactionMessage) {
-		final String sql = "INSERT INTO t_transaction_message(queue, exchange, routingKey, content,uniqueCode) VALUES (?,?,?,?,?)";
+		final String sql = "INSERT INTO t_transaction_message(queue, exchange, routingKey, content,uniqueCode,exchangeType,headers) VALUES (?,?,?,?,?,?,?)";
 		KeyHolder keyHolder = new GeneratedKeyHolder();
 		jdbcTemplate.update(con -> {
 			PreparedStatement ps = con.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -33,6 +33,8 @@ public class TransactionMessageDao {
 			ps.setString(3, transactionMessage.getRoutingKey());
 			ps.setString(4, transactionMessage.getContent());
 			ps.setString(5, transactionMessage.getUniqueCode());
+			ps.setString(6, transactionMessage.getExchangeType());
+			ps.setString(7, transactionMessage.getHeaders());
 			return ps;
 		}, keyHolder);
 		transactionMessage.setId(keyHolder.getKey().longValue());

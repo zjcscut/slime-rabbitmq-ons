@@ -111,4 +111,8 @@ public class BlockingLocalTransactionExecutorConsumer {
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
     }
+
+	public String getUniqueCode() {
+		return uniqueCode;
+	}
 }

@@ -10,10 +10,10 @@ import org.springframework.stereotype.Component;
  * @since 2017/7/26 15:28
  */
 @Component
-@ConfigurationProperties(prefix = OnsProperties.PREFIX)
-public class OnsProperties {
+@ConfigurationProperties(prefix = OnsClientProperties.PREFIX)
+public class OnsClientProperties {
 
-    public static final String PREFIX = "slime.ons";
+    public static final String PREFIX = "slime.ons.client";
     public static final String HALFMESSAGE_QUEUE_KEY = PREFIX + ".halfMessageQueue";
     public static final String DEFAULT_HALFMESSAGE_QUEUE = HALFMESSAGE_QUEUE_KEY;
 
@@ -26,7 +26,7 @@ public class OnsProperties {
     private static final Integer DEFAULT_CORESIZE = Runtime.getRuntime().availableProcessors() * 2;
     private static final Integer DEFAULT_QUEUECAPACITY = 50;
     private static final Integer DEFAULT_KEEPALIVESECOND = 60;
-    private static final String DEFAULT_THREADNAMEPREFIX = "smlie-ons";
+    private static final String DEFAULT_THREADNAMEPREFIX = "slime-ons-client";
 
     private String halfMessageQueue = DEFAULT_HALFMESSAGE_QUEUE;
     private String transactionCheckerQueue = DEFAULT_TRANSACTIONCHECKER_QUEUE;

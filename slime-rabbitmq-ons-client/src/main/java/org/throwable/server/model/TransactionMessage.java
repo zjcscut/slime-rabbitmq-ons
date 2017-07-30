@@ -16,6 +16,9 @@ public class TransactionMessage {
 
 	private String uniqueCode;
 
+	private String exchangeType;
+	private String headers;
+
     public Long getId() {
         return id;
     }
@@ -62,5 +65,21 @@ public class TransactionMessage {
 
 	public void setUniqueCode(String uniqueCode) {
 		this.uniqueCode = uniqueCode;
+	}
+
+	public String getExchangeType() {
+		return exchangeType;
+	}
+
+	public void setExchangeType(String exchangeType) {
+		this.exchangeType = exchangeType;
+	}
+
+	public String getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(String headers) {
+		this.headers = headers;
 	}
 }

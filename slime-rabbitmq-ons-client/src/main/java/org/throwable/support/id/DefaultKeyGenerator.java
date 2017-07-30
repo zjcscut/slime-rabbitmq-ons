@@ -57,92 +57,94 @@ import java.util.Date;
 @Slf4j
 public class DefaultKeyGenerator implements KeyGenerator, InitializingBean, EnvironmentAware {
 
-    public static final long EPOCH;
+	public static final long EPOCH;
 
-    private static final String WORKERID_KEY = "ppmoney.jd-credit-center.workerId";
-    private static final long DEFAULT_WORKERID_ID = 1;
+	private static final String WORKER_ID_KEY = "sharding-jdbc.default.key.generator.worker.id";
+	private static final long DEFAULT_WORKER_ID = 1;
 
-    private static final long SEQUENCE_BITS = 12L;
+	private static final long SEQUENCE_BITS = 12L;
 
-    private static final long WORKER_ID_BITS = 10L;
+	private static final long WORKER_ID_BITS = 10L;
 
-    private static final long SEQUENCE_MASK =  (1 << SEQUENCE_BITS) - 1L;
+	private static final long SEQUENCE_MASK = (1 << SEQUENCE_BITS) - 1L;
 
-    private static final long WORKER_ID_LEFT_SHIFT_BITS = SEQUENCE_BITS;
+	private static final long WORKER_ID_LEFT_SHIFT_BITS = SEQUENCE_BITS;
 
-    private static final long TIMESTAMP_LEFT_SHIFT_BITS = WORKER_ID_LEFT_SHIFT_BITS + WORKER_ID_BITS;
+	private static final long TIMESTAMP_LEFT_SHIFT_BITS = WORKER_ID_LEFT_SHIFT_BITS + WORKER_ID_BITS;
 
-    private static final long WORKER_ID_MAX_VALUE = 1L << WORKER_ID_BITS;
+	private static final long WORKER_ID_MAX_VALUE = 1L << WORKER_ID_BITS;
 
-    @Setter
-    private static TimeService timeService = new TimeService();
+	@Setter
+	private static TimeService timeService = new TimeService();
 
-    @Getter
-    private volatile long workerId;
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-    private Long workerIdToSet;
+	@Getter
+	private volatile long workerId;
 
-    //起始时间2017-6-1 00:00:00
-    static {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(2017, Calendar.JUNE, 1);
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        EPOCH = calendar.getTimeInMillis();
-    }
+	private Long workerIdToSet;
 
-    private long sequence;
+	//起始时间2017-6-1 00:00:00
+	static {
+		Calendar calendar = Calendar.getInstance();
+		calendar.set(2017, Calendar.JUNE, 1);
+		calendar.set(Calendar.HOUR_OF_DAY, 0);
+		calendar.set(Calendar.MINUTE, 0);
+		calendar.set(Calendar.SECOND, 0);
+		calendar.set(Calendar.MILLISECOND, 0);
+		EPOCH = calendar.getTimeInMillis();
+	}
 
-    private long lastTime;
+	private long sequence;
 
-    /**
-     * 设置工作进程Id.
-     *
-     * @param workerId 工作进程Id
-     */
-    public void setWorkerId(final long workerId) {
-        Preconditions.checkArgument(workerId >= 0L && workerId < WORKER_ID_MAX_VALUE);
-        this.workerId = workerId;
-    }
+	private long lastTime;
 
-    private long waitUntilNextTime(final long lastTime) {
-        long time = timeService.getCurrentMillis();
-        while (time <= lastTime) {
-            time = timeService.getCurrentMillis();
-        }
-        return time;
-    }
+	/**
+	 * 设置工作进程Id.
+	 *
+	 * @param workerId 工作进程Id
+	 */
+	public void setWorkerId(final long workerId) {
+		Preconditions.checkArgument(workerId >= 0L && workerId < WORKER_ID_MAX_VALUE);
+		this.workerId = workerId;
+	}
 
-    @Override
-    public void setEnvironment(Environment environment) {
-        this.workerIdToSet = environment.getProperty(WORKERID_KEY, Long.class);
-        if (this.workerIdToSet == null) this.workerIdToSet = DEFAULT_WORKERID_ID;
-    }
+	private long waitUntilNextTime(final long lastTime) {
+		long time = timeService.getCurrentMillis();
+		while (time <= lastTime) {
+			time = timeService.getCurrentMillis();
+		}
+		return time;
+	}
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.workerId = this.workerIdToSet;
-        setWorkerId(this.workerId);
-    }
+	@Override
+	public void setEnvironment(Environment environment) {
+		this.workerIdToSet = environment.getProperty(WORKER_ID_KEY, Long.class);
+		if (this.workerIdToSet == null) this.workerIdToSet = DEFAULT_WORKER_ID;
+	}
 
-    @Override
-    public long generateKey() {
-        long currentMillis = timeService.getCurrentMillis();
-        Preconditions.checkState(lastTime <= currentMillis, "Clock is moving backwards, last time is %d milliseconds, current time is %d milliseconds", lastTime, currentMillis);
-        if (lastTime == currentMillis) {
-            if (0L == (sequence = ++sequence & SEQUENCE_MASK)) {
-                currentMillis = waitUntilNextTime(currentMillis);
-            }
-        } else {
-            sequence = 0;
-        }
-        lastTime = currentMillis;
-        if (log.isDebugEnabled()) {
-            log.debug("{}-{}-{}", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date(lastTime)), workerId, sequence);
-        }
-        return ((currentMillis - EPOCH) << TIMESTAMP_LEFT_SHIFT_BITS) | (workerId << WORKER_ID_LEFT_SHIFT_BITS) | sequence;
-    }
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		this.workerId = this.workerIdToSet;
+		setWorkerId(this.workerId);
+	}
+
+	@Override
+	public long generateKey() {
+		long currentMillis = timeService.getCurrentMillis();
+		Preconditions.checkState(lastTime <= currentMillis, "Clock is moving backwards, last time is %d milliseconds, current time is %d milliseconds", lastTime, currentMillis);
+		if (lastTime == currentMillis) {
+			if (0L == (sequence = ++sequence & SEQUENCE_MASK)) {
+				currentMillis = waitUntilNextTime(currentMillis);
+			}
+		} else {
+			sequence = 0;
+		}
+		lastTime = currentMillis;
+		if (log.isDebugEnabled()) {
+			log.debug("{}-{}-{}", dateFormatter.format(new Date(lastTime)), workerId, sequence);
+		}
+		return ((currentMillis - EPOCH) << TIMESTAMP_LEFT_SHIFT_BITS) | (workerId << WORKER_ID_LEFT_SHIFT_BITS) | sequence;
+	}
 
 }

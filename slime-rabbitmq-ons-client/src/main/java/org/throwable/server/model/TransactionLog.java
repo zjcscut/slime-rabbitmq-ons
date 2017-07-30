@@ -24,7 +24,11 @@ public class TransactionLog {
     private Integer pushAttemptTime;
 
     private Date createTime;
-    private Date updateTime;
+    private Date fireTransactionTime;
+    private Date transactionEndTime;
+    private Date pushTime;
+
+    private String checkerClassName;
 
 
     public Long getId() {
@@ -99,13 +103,6 @@ public class TransactionLog {
         this.createTime = createTime;
     }
 
-    public Date getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Date updateTime) {
-        this.updateTime = updateTime;
-    }
 
     public Long getTransactionId() {
         return transactionId;
@@ -121,5 +118,37 @@ public class TransactionLog {
 
 	public void setFireTransactionStats(String fireTransactionStats) {
 		this.fireTransactionStats = fireTransactionStats;
+	}
+
+	public Date getTransactionEndTime() {
+		return transactionEndTime;
+	}
+
+	public void setTransactionEndTime(Date transactionEndTime) {
+		this.transactionEndTime = transactionEndTime;
+	}
+
+	public Date getPushTime() {
+		return pushTime;
+	}
+
+	public void setPushTime(Date pushTime) {
+		this.pushTime = pushTime;
+	}
+
+	public String getCheckerClassName() {
+		return checkerClassName;
+	}
+
+	public void setCheckerClassName(String checkerClassName) {
+		this.checkerClassName = checkerClassName;
+	}
+
+	public Date getFireTransactionTime() {
+		return fireTransactionTime;
+	}
+
+	public void setFireTransactionTime(Date fireTransactionTime) {
+		this.fireTransactionTime = fireTransactionTime;
 	}
 }

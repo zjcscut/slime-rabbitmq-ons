@@ -1,3 +1,4 @@
 # Auto Configure
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.throwable.configuration.RabbitmqConfiguration
+org.throwable.configuration.RabbitmqConfiguration,\
+org.throwable.server.configuration.OnsServerConfiguration
