@@ -12,5 +12,7 @@ public enum FireTransactionStats {
 
 	SUCCESS,
 
+	RETRY_SUCCESS,
+
 	FAIL
 }

@@ -127,7 +127,7 @@ public class TransactionCheckerFireService extends AbstractRabbitmqSupportableSe
 						channel.basicPublish(transactionCheckerQueue, transactionCheckerQueue, basicProperties,
 								transactionMessage.getContent().getBytes(Constants.ENCODING));
 						if (channel.waitForConfirms(confirmTimeoutSeconds * 1000)) {
-							return FireTransactionStats.SUCCESS;
+							return FireTransactionStats.RETRY_SUCCESS;
 						}
 						if (log.isWarnEnabled()) {
 							log.warn(String.format("Publish and Confirm message to fire transaction failed,uniqueCode:%s,transactionId:%s",

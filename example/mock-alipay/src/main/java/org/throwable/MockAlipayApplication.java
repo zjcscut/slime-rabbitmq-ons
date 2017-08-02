@@ -10,9 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 2017/7/31 1:38
  */
 @SpringBootApplication
-public class Application {
+public class MockAlipayApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
+		SpringApplication.run(MockAlipayApplication.class, args);
 	}
 }

@@ -23,9 +23,9 @@ public class LocalCommandLineRunner implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		System.out.println("5s后alipay服务将会向yuEbao发起100笔金额更变请求...");
+		System.out.println("5s后alipay服务将会向yuEbao发起1000笔金额更变请求...");
 		Thread.sleep(5000);
-		for (int i = 0; i < 100; i++) {  //模拟发起100次付款
+		for (int i = 0; i < 1000; i++) {  //模拟发起100次付款
 			mockAlipayService.process((long) i, (long) i * RANDOM.nextInt(10) + i);
 		}
 	}

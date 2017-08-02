@@ -17,10 +17,12 @@ slime:
         halfMessageQueue: slime.ons.halfMessageQueue
         transactionCheckerQueue: slime.ons.transactionCheckerQueue
         fireTransactionQueue: slime.ons.fireTransactionQueue
-    server:
+      server:
         halfMessageQueue: slime.ons.halfMessageQueue
         transactionCheckerQueue: slime.ons.transactionCheckerQueue
         fireTransactionQueue: slime.ons.fireTransactionQueue
+        checkerFireIntervalSeconds: 10
+        pushStatsInspectionIntervalSeconds: 10
 logging:
   level:
     org.springframework.jdbc.core.JdbcTemplate: INFO

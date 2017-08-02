@@ -10,9 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @since 2017/7/31 1:39
  */
 @SpringBootApplication
-public class Application {
+public class MockYuEBaoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
+		SpringApplication.run(MockYuEBaoApplication.class, args);
 	}
 }

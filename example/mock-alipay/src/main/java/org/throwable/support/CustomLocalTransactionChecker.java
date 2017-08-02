@@ -18,6 +18,11 @@ public class CustomLocalTransactionChecker implements LocalTransactionChecker{
 
 	@Override
 	public LocalTransactionStats doInTransactionCheck(Message message) {
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+			//ignore
+		}
 		return LocalTransactionStats.values()[RANDOM.nextInt(3)];
 	}
 }

@@ -109,13 +109,13 @@ public class TransactionLogDao {
 	}
 
 	public List<TransactionLog> queryRecordsToFire(String transactionStats, int pageNumber, int pageSize, Date delta, Integer maxCheckAttemptTime) {
-		final String sql = "SELECT * FROM t_transaction_log WHERE transactionStats = ? AND checkAttemptTime < ? AND createTime < ? LIMIT ?,?";
+		final String sql = "SELECT * FROM t_transaction_log WHERE transactionStats = ? AND checkAttemptTime < ? AND createTime <= ? LIMIT ?,?";
 		return jdbcTemplate.query(sql, new Object[]{transactionStats, maxCheckAttemptTime, delta, pageNumber, pageSize}, beanPropertyRowMapper);
 	}
 
 	public List<TransactionLog> queryRecordsToPush(String transactionStats, String pushStatsInit, String pushStatsFail
 			, int pageNumber, int pageSize, Date delta, Integer maxPushAttemptTime) {
-		final String sql = "SELECT * FROM t_transaction_log WHERE transactionStats = ? AND pushStats IN (?,?) AND pushAttemptTime < ? AND createTime < ? LIMIT ?,?";
+		final String sql = "SELECT * FROM t_transaction_log WHERE transactionStats = ? AND pushStats IN (?,?) AND pushAttemptTime < ? AND createTime <= ? LIMIT ?,?";
 		return jdbcTemplate.query(sql, new Object[]{transactionStats, pushStatsFail, pushStatsInit, maxPushAttemptTime, delta, pageNumber, pageSize}, beanPropertyRowMapper);
 	}
 }
