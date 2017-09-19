@@ -1,0 +1,18 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <parent>
+        <artifactId>slime-rabbitmq-ons</artifactId>
+        <groupId>org.throwable</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>slime-rabbitmq-ons-core</artifactId>
+    <packaging>jar</packaging>
+    <name>slime-rabbitmq-ons-core</name>
+    <dependencies>
+
+    </dependencies>
+    <build>
+        <finalName>slime-rabbitmq-ons-core</finalName>
+    </build>
+</project>

@@ -7,16 +7,25 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>slime-rabbitmq-ons-client</module>
+        <module>slime-rabbitmq-ons-console</module>
+        <module>slime-rabbitmq-ons-core</module>
+        <module>slime-rabbitmq-ons-server</module>
     </modules>
     <name>slime-rabbitmq-ons</name>
 
     <properties>
         <springboot.version>1.5.3.RELEASE</springboot.version>
         <lombok.version>1.16.18</lombok.version>
+        <encoding>UTF-8</encoding>
+        <jdk.version>1.8</jdk.version>
+        <project.version>1.0-SNAPSHOT</project.version>
+
+        <maven.compiler.version>3.6.1</maven.compiler.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -24,6 +33,31 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+
+            <dependency>
+                <groupId>org.throwable</groupId>
+                <artifactId>slime-rabbitmq-ons-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.throwable</groupId>
+                <artifactId>slime-rabbitmq-ons-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.throwable</groupId>
+                <artifactId>slime-rabbitmq-ons-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.throwable</groupId>
+                <artifactId>slime-rabbitmq-ons-console</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -35,10 +69,10 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-jdbc</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>org.springframework.boot</groupId>-->
+            <!--<artifactId>spring-boot-starter-jdbc</artifactId>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -79,8 +113,6 @@
             <artifactId>fastjson</artifactId>
             <version>1.2.35</version>
         </dependency>
-
-
     </dependencies>
 
     <build>
@@ -88,10 +120,11 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>${maven.compiler.version}</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${encoding}</encoding>
                 </configuration>
             </plugin>
         </plugins>
